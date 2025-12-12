@@ -1,5 +1,0 @@
-import pygame
-WIDTH, HEIGHT = 992, 512
-FPS = 60
-TILE_SIZE = 32
-PLAYER_SPEED = 3
