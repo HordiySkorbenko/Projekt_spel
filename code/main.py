@@ -1,5 +1,6 @@
 from settings import *
 from player import Player
+from groups import Allsprites
 
 class Game:
     def __init__(self):
@@ -11,7 +12,7 @@ class Game:
         self.running = True
 
         # groups 
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = Allsprites()
 
         # sprites
         self.player = Player((400,300), self.all_sprites)
