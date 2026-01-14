@@ -13,5 +13,5 @@ class Allsprites(pygame.sprite.Group):
         ground_sprites = [sprite for sprite in self if hasattr (sprite,'ground')]
         object_sprites = [sprite for sprite in self if not hasattr (sprite,'ground')]
         for layer in [ground_sprites, object_sprites]:
-            for sprite in sorted(layer, key = lambda sprite: sprite.rect .centery): 
+            for sprite in sorted(layer, key = lambda sprite: sprite.rect.centery): 
                 self.display_surface.blit(sprite.image,sprite.rect + self.offset)

@@ -1,7 +1,8 @@
 #todo lägg in dethär i sprites
 """todo: i game setup 'entities' lägga till:
 self.gun = Gun(self.player, self.all_sprites)
-import math
+from math import atan2,degrees
+5:34:18
 """
 from settings import *
 from math import atan2,degrees
@@ -10,7 +11,7 @@ class Gun(pygame.sprite.Sprite):
     def __init__(self, player,groups):
         # koppling till player
         self.player = player
-        self.distance = 140
+        self.distance = 90
         self.player_direction = pygame.Vector2(0,1)
         #pistol sprite position
         super().__init__(groups)

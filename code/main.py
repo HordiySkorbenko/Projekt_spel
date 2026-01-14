@@ -24,6 +24,22 @@ class Game:
             w,h = randint(60, 100), randint(50, 100)
             CollisionSprite((x,y),(w,h), (self.all_sprites, self.collision_sprites))
 
+        #gun timer
+        self.can_shoot = True
+        self.shoot_time = 0
+        self.gun_cooldown = 100
+
+    def input(self):
+        if pygame.mouse.get_pressed()[0] and self.can_shoot: #index 0 = vänster click
+            self.can_shoot = False
+            self.shoot_time = pygame.time.get_ticks
+    
+    def gun_timer(self):
+        if not self.can_shoot:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.shoot_time >= self.gun_cooldown:
+                self.can_shoot = True
+
     def run(self):
         while self.running:
             # dt 
@@ -35,11 +51,13 @@ class Game:
                     self.running = False
 
             # update 
+            self.gun_timer()
+            self.input()
             self.all_sprites.update(dt)
 
             # draw
             self.display_surface.fill('black')
-            self.all_sprites.draw(self.display_surface)
+            self.all_sprites.draw(self.player.rect.center)
             pygame.display.update()
 
         pygame.quit()
