@@ -33,6 +33,11 @@ class Game:
             CollisionSprite((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites))
         for obj in map.get_layer_by_name('Collisions'):
             CollisionSprite((obj.x, obj.y), pygame.Surface((obj.width, obj.height)), self.collision_sprites)
+        for obj in map.get_layer_by_name('Entities'):
+            if obj.name == 'Player':
+                self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
+                self.gun = Gun(self.Player,self.all_sprites)
+
         
         
 
@@ -46,11 +51,12 @@ class Game:
             self.can_shoot = False
             self.shoot_time = pygame.time.get_ticks
     
-    def gun_timer(self):
+    """def gun_timer(self):
         if not self.can_shoot:
             current_time = pygame.time.get_ticks()
             if current_time - self.shoot_time >= self.gun_cooldown:
                 self.can_shoot = True
+    """
 
     def run(self):
         while self.running:
@@ -63,7 +69,7 @@ class Game:
                     self.running = False
 
             # update 
-            self.gun_timer()
+            #self.gun_timer()
             self.input()
             self.all_sprites.update(dt)
 
