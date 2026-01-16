@@ -1,10 +1,1 @@
-lägga in i main loop i game class i setup funktion och ta bort self.player i sprites:
-for obj in map.get_layer_by_name('Entities')
-    if obj.name == 'Player':
-        self.player = Player((obj.x,obj.y), self.all_sprites)
 
-i class run i main
-byta ut till self.all_sprites.draw(self.player.rect.center)
-
-i sprites.py i class sprite
-lägga till self.ground = true
