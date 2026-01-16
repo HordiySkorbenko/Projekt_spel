@@ -21,7 +21,7 @@ class Game:
         self.setup()
 
         # sprites
-        self.player = Player((400,300), self.all_sprites, self.collision_sprites)
+        #self.player = Player((400,300), self.all_sprites, self.collision_sprites)
 
        
     def setup(self):

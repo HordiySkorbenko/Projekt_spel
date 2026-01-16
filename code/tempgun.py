@@ -49,8 +49,9 @@ class Bullet(pygame.sprite.Sprite):
 
 # byt ut dethär i main.py istället för samma klass:
 
-    def input(self):
+'''    def input(self):
         if pygame.mouse.get_pressed()[0] and self.can_shoot: #index 0 = vänster click
             Bullet(surf)
             self.can_shoot = False
             self.shoot_time = pygame.time.get_ticks
+'''

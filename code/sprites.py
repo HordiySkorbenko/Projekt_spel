@@ -18,7 +18,7 @@ class Gun(pygame.sprite.Sprite):
     def __init__(self, player,groups):
         # koppling till player
         self.player = player
-        self.distance = 90
+        self.distance = 150
         self.player_direction = pygame.Vector2(0,1)
         #pistol sprite position
         super().__init__(groups)
