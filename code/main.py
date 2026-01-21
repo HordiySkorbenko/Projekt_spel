@@ -61,6 +61,9 @@ class Game:
     
 
     def run(self):
+        clock = pygame.time.Clock()
+        font = pygame.font.SysFont("Arial", 18, bold=True)
+
         while self.running:
             # dt 
             dt = self.clock.tick() / 1000
@@ -75,10 +78,14 @@ class Game:
             self.input()
             self.all_sprites.update(dt)
 
+
             # draw
             self.display_surface.fill('black')
             self.all_sprites.draw(self.player.rect.center)
+            fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
+            self.display_surface.blit(fps_text, (10, 10))
             pygame.display.update()
+            pygame.display.flip()
 
         pygame.quit()
 
