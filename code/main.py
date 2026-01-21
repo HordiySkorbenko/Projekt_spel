@@ -40,14 +40,11 @@ class Game:
             if obj.name == 'Player':
                 self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
                 self.gun = Gun(self.player,self.all_sprites)
-
-        
-        
-
+  
         #gun timer
         self.can_shoot = True
         self.shoot_time = 0
-        self.gun_cooldown = 600
+        self.gun_cooldown = 100
 
     def input(self):
         if pygame.mouse.get_pressed()[0] and self.can_shoot: #index 0 = vänster click

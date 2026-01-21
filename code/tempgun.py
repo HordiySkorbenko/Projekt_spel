@@ -44,4 +44,9 @@ class Bullet(pygame.sprite.Sprite):
         super().__init__(groups)
         self.image = surface
         self.rect = self.image.get_rect(center = pos)
+        self.direction = direction
+        self.W_speed_in_the_chat = 1200
+
+    def update(self,dt):
+        self.rect.center += self.direction *self.W_speed_in_the_chat *dt
 

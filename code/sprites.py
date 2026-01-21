@@ -12,7 +12,7 @@ class CollisionSprite(pygame.sprite.Sprite):
     def __init__(self, pos, surf, groups):
         super().__init__(groups)
         self.image = surf
-        self.rect = self.image.get_rect(topleft = pos)    
+        self.rect = self.image.get_rect(topleft = pos) 
 
 class Gun(pygame.sprite.Sprite):
     def __init__(self, player,groups):
@@ -50,4 +50,13 @@ class Bullet(pygame.sprite.Sprite):
     def __init__( self, surface, pos, direction, groups):
         super().__init__(groups)
         self.image = surface
-        self.rect = self.image.get_rect(center = pos)    
+        self.rect = self.image.get_rect(center = pos)  
+        self.spanwntime = pygame.time.get_ticks()
+        self.lifetime = 5000
+        self.direction = direction
+        self.W_speed_in_the_chat = 1200  
+        
+    def update(self,dt):
+        self.rect.center += self.direction *self.W_speed_in_the_chat *dt
+        if pygame.time.get_ticks() - self.spanwntime >= self.lifetime:
+            self.kill()
