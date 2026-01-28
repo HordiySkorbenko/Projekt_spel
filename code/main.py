@@ -13,20 +13,7 @@ class Game:
         pygame.display.set_caption('Survivor')
         self.clock = pygame.time.Clock()
         self.running = True
-        self.load_images()
 
-        # groups 
-        self.all_sprites = Allsprites()
-        self.collision_sprites = pygame.sprite.Group()
-        self.bullet_sprites = pygame.sprite.Group()        
-        self.setup()
-
-        # sprites
-        #self.player = Player((400,300), self.all_sprites, self.collision_sprites)
-    def load_images(self):
-        self.bullet_surf = pygame.image.load(join('image', 'gun','bullet.png')).convert_alpha()
-
-       
     def setup(self):
         map = load_pygame(join('data','maps', 'world.tmx'))
         
@@ -40,6 +27,19 @@ class Game:
             if obj.name == 'Player':
                 self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
                 self.gun = Gun(self.player,self.all_sprites)
+            else:
+                self.spawn_pos.append((obj.x,obj.y))
+        # groups 
+        self.all_sprites = Allsprites()
+        self.collision_sprites = pygame.sprite.Group()
+        self.bullet_sprites = pygame.sprite.Group()        
+
+        # sprites
+        #self.player = Player((400,300), self.all_sprites, self.collision_sprites)
+    def load_images(self):
+        self.bullet_surf = pygame.image.load(join('image', 'gun','bullet.png')).convert_alpha()
+
+       
   
         #gun timer
         self.can_shoot = True
@@ -59,8 +59,15 @@ class Game:
             if current_time - self.shoot_time >= self.gun_cooldown:
                 self.can_shoot = True
     
+            self.enemy_event = pygame.event.custom_type()
+            pygame.time.set_timer(self.enemy_event,300)
+            self.spawn_pos = []
 
+        self.load_images()
+        self.setup()
     def run(self):
+        font = pygame.font.SysFont("Arial", 18, bold=True)
+
         while self.running:
             # dt 
             dt = self.clock.tick() / 1000
@@ -69,16 +76,23 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                if event.type == self.enemy_event:
 
             # update 
             self.gun_timer()
             self.input()
             self.all_sprites.update(dt)
 
+            #enemy timer
+
+
             # draw
             self.display_surface.fill('black')
             self.all_sprites.draw(self.player.rect.center)
+            fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
+            self.display_surface.blit(fps_text, (10, 10))
             pygame.display.update()
+            pygame.display.flip()
 
         pygame.quit()
 
