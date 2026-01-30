@@ -100,9 +100,6 @@ class Game:
             self.input()
             self.all_sprites.update(dt)
 
-            #enemy timer
-
-
             # draw
             self.display_surface.fill('black')
             self.all_sprites.draw(self.player.rect.center)
