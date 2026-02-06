@@ -53,7 +53,7 @@ class Bullet(pygame.sprite.Sprite):
         self.image = surface
         self.rect = self.image.get_rect(center = pos)  
         self.spanwntime = pygame.time.get_ticks()
-        self.lifetime = 5000
+        self.lifetime = 1500
         self.direction = direction
         self.W_speed_in_the_chat = 1200  
         
@@ -78,7 +78,7 @@ class Enemy(pygame.sprite.Sprite):
         self.hitbox_rect = self.rect.inflate(-20,-40)
         self.collision_sprites = collision_sprites
         self.direction = pygame.Vector2()
-        self.speed = 350
+        self.speed = 150 # kanske 350 för hard difficulty
         
         #timer
         self.death_time = 0

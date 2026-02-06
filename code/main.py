@@ -11,7 +11,7 @@ class Game:
     def __init__(self):
         # setup
         pygame.init()
-        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT),pygame.FULLSCREEN)
         pygame.display.set_caption('Survivor')
         self.clock = pygame.time.Clock()
         self.running = True
@@ -29,7 +29,7 @@ class Game:
 
         #enemy timer
         self.enemy_event = pygame.event.custom_type()
-        pygame.time.set_timer(self.enemy_event,300)
+        pygame.time.set_timer(self.enemy_event,1000)# timer till 300 om hard difficulty
         self.spawn_pos = []
 
         self.shoot_sound = pygame.mixer.Sound(join('audio', 'shoot.wav'))
@@ -110,6 +110,9 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.running = False
                 if event.type == self.enemy_event:
                     Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites)
 
