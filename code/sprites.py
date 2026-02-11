@@ -1,5 +1,7 @@
 from settings import *
 from math import atan2,degrees
+from player import Player
+
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surf, groups):
@@ -116,7 +118,9 @@ class Enemy(pygame.sprite.Sprite):
         self.image = surf
     
     def death_timer(self):
+        global xp
         if pygame.time.get_ticks() - self.death_time >= self.death_duration:
+            self.player.add_xp(10)
             self.kill()
 
 
@@ -126,3 +130,4 @@ class Enemy(pygame.sprite.Sprite):
             self.animate(dt)
         else:
             self.death_timer()
+

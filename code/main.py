@@ -2,10 +2,11 @@ from settings import *
 import pygame
 from player import Player
 from groups import Allsprites
-from random import randint 
 from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
+from ui import XPBar
+
 
 class Game:
     def __init__(self):
@@ -82,6 +83,8 @@ class Game:
             if obj.name == 'Player':
                 self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
                 self.gun = Gun(self.player,self.all_sprites)
+                self.xp_bar = XPBar(self.player)
+
             else:
                 self.spawn_pos.append((obj.x,obj.y))
 
@@ -126,6 +129,10 @@ class Game:
             self.all_sprites.draw(self.player.rect.center)
             fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
             self.display_surface.blit(fps_text, (10, 10))
+
+            self.xp_bar.draw(self.display_surface)
+
+
             pygame.display.update()
             pygame.display.flip()
             self.bullet_collision()
