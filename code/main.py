@@ -26,7 +26,7 @@ class Game:
         #gun timer
         self.can_shoot = True
         self.shoot_time = 0
-        self.gun_cooldown = 100
+        self.gun_cooldown = 450
 
         #enemy timer
         self.enemy_event = pygame.event.custom_type()
@@ -75,7 +75,13 @@ class Game:
     def gun_timer(self):
         if not self.can_shoot:
             current_time = pygame.time.get_ticks()
-            if current_time - self.shoot_time >= self.gun_cooldown:
+            
+            # Minska cooldown med 10% av originalet för varje level efter den första
+            reduction = (self.player.level - 1) * 0.25
+            current_cooldown = self.gun_cooldown * (1 - reduction)
+            
+            # Max-gräns så man inte skjuter oändligt snabbt
+            if current_time - self.shoot_time >= max(current_cooldown, 50):
                 self.can_shoot = True
     
     def setup(self):
