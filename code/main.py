@@ -5,8 +5,8 @@ from groups import Allsprites
 from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
+from menu import Menu
 from ui import XPBar
-
 
 class Game:
     def __init__(self):
@@ -16,6 +16,9 @@ class Game:
         pygame.display.set_caption('Survivor')
         self.clock = pygame.time.Clock()
         self.running = True
+        
+        menu = Menu(self.display_surface)
+        menu.main_menu()
 
         # groups 
         self.all_sprites = Allsprites()
