@@ -5,6 +5,8 @@ from groups import Allsprites
 from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
+from menu import Menu
+from ui import XPBar
 
 class Game:
     def __init__(self):
