@@ -39,6 +39,14 @@ class Game:
         self.load_images()
         self.setup()
 
+    def bullet_collision(self):
+        collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
+
+        for bullet, enemies in collision_dict.items():
+            for enemy in enemies:
+                # Kontrollera att metoden finns innan vi anropar den
+                if hasattr(enemy, 'destroy'):
+                    enemy.destroy()
 
     def load_images(self):
         self.bullet_surf = pygame.image.load(join('image', 'gun','bullet.png')).convert_alpha()
@@ -89,14 +97,13 @@ class Game:
                 self.spawn_pos.append((obj.x,obj.y))
 
     def bullet_collision(self):
-        
-        if self.bullet_sprites:
-            for bullet in self.bullet_sprites:
-                collision_sprites = pygame.sprite.spritecollide(bullet, self.enemy_sprites, False, pygame.sprite.collide_mask)
-                if collision_sprites:
-                    for sprite in collision_sprites:
-                        sprite.destroy()
-                    bullet.kill()
+        # Denna rad ersätter hela din nuvarande loop och är extremt snabb
+        collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
+
+        for bullet, enemies in collision_dict.items():
+            for enemy in enemies:
+                if enemy.death_time == 0:
+                    enemy.destroy()
         
     def player_collision(self):
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
@@ -134,7 +141,6 @@ class Game:
 
 
             pygame.display.update()
-            pygame.display.flip()
             self.bullet_collision()
             self.player_collision()
 
