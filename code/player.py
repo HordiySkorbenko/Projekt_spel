@@ -8,13 +8,25 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load(join('image', 'player', 'down', '0.png')).convert_alpha()  
         self.rect = self.image.get_rect(center = pos)
         self.hitbox_rect = self.rect.inflate(-90,-90)
-        
+        #xp
+        self.xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
     
         # movement 
         self.direction = pygame.Vector2()
         self.speed = 500
         self.collision_sprites = collision_sprites
+    
+    def add_xp(self, amount):
+        self.xp += amount
 
+        while self.xp >= self.xp_to_next_level:
+            self.xp -= self.xp_to_next_level
+            self.level += 1
+            self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
+
+    
     def load_images(self):
         self.frames = {'left' : [], 'right' : [], 'up' : [], 'down' : []}
         

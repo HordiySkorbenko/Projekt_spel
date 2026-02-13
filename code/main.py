@@ -2,12 +2,9 @@ from settings import *
 import pygame
 from player import Player
 from groups import Allsprites
-from random import randint 
 from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
-from menu import Menu
-
 
 class Game:
     def __init__(self):
@@ -43,6 +40,14 @@ class Game:
         self.load_images()
         self.setup()
 
+    def bullet_collision(self):
+        collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
+
+        for bullet, enemies in collision_dict.items():
+            for enemy in enemies:
+                # Kontrollera att metoden finns innan vi anropar den
+                if hasattr(enemy, 'destroy'):
+                    enemy.destroy()
 
     def load_images(self):
         self.bullet_surf = pygame.image.load(join('image', 'gun','bullet.png')).convert_alpha()
@@ -87,18 +92,19 @@ class Game:
             if obj.name == 'Player':
                 self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
                 self.gun = Gun(self.player,self.all_sprites)
+                self.xp_bar = XPBar(self.player)
+
             else:
                 self.spawn_pos.append((obj.x,obj.y))
 
     def bullet_collision(self):
-        
-        if self.bullet_sprites:
-            for bullet in self.bullet_sprites:
-                collision_sprites = pygame.sprite.spritecollide(bullet, self.enemy_sprites, False, pygame.sprite.collide_mask)
-                if collision_sprites:
-                    for sprite in collision_sprites:
-                        sprite.destroy()
-                    bullet.kill()
+        # Denna rad ersätter hela din nuvarande loop och är extremt snabb
+        collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
+
+        for bullet, enemies in collision_dict.items():
+            for enemy in enemies:
+                if enemy.death_time == 0:
+                    enemy.destroy()
         
     def player_collision(self):
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
@@ -131,8 +137,11 @@ class Game:
             self.all_sprites.draw(self.player.rect.center)
             fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
             self.display_surface.blit(fps_text, (10, 10))
+
+            self.xp_bar.draw(self.display_surface)
+
+
             pygame.display.update()
-            pygame.display.flip()
             self.bullet_collision()
             self.player_collision()
 

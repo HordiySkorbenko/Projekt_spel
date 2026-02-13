@@ -1,5 +1,7 @@
 from settings import *
 from math import atan2,degrees
+from player import Player
+
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surf, groups):
@@ -47,21 +49,23 @@ class Gun(pygame.sprite.Sprite):
         self.rect.center = self.player.rect.center + self.player_direction * self.distance
 
 class Bullet(pygame.sprite.Sprite):
-    
-    def __init__( self, surface, pos, direction, groups):
+    def __init__(self, surface, pos, direction, groups):
         super().__init__(groups)
-        self.image = surface
+        
+        # Beräkna vinkeln en gång vid start
+        angle = degrees(atan2(-direction.y, direction.x)) 
+        self.image = pygame.transform.rotate(surface, angle)
+        
         self.rect = self.image.get_rect(center = pos)  
-        self.spanwntime = pygame.time.get_ticks()
+        self.spawn_time = pygame.time.get_ticks() # Fixat stavfel: spanwntime -> spawn_time
         self.lifetime = 1500
         self.direction = direction
-        self.W_speed_in_the_chat = 1200  
+        self.speed = 1200  
         
-    def update(self,dt):
-        self.rect.center += self.direction *self.W_speed_in_the_chat *dt
-        if pygame.time.get_ticks() - self.spanwntime >= self.lifetime:
+    def update(self, dt):
+        self.rect.center += self.direction * self.speed * dt
+        if pygame.time.get_ticks() - self.spawn_time >= self.lifetime:
             self.kill()
-
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos,frames,groups,player,collision_sprites):
@@ -100,14 +104,17 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = self.hitbox_rect.center
 
     def collision(self, direction):
-        for sprite in self.collision_sprites:
+        
+        overlap_sprites = pygame.sprite.spritecollide(self, self.collision_sprites, False)
+        
+        for sprite in overlap_sprites:
             if sprite.rect.colliderect(self.hitbox_rect):
                 if direction == "horizontal":
-                    if self.direction.x > 0 : self.hitbox_rect.right = sprite.rect.left
-                    if self.direction.x < 0 : self.hitbox_rect.left = sprite.rect.right
-                else :
-                    if self.direction.y > 0 : self.hitbox_rect.bottom = sprite.rect.top
-                    if self.direction.y < 0 : self.hitbox_rect.top = sprite.rect.bottom
+                    if self.direction.x > 0: self.hitbox_rect.right = sprite.rect.left
+                    if self.direction.x < 0: self.hitbox_rect.left = sprite.rect.right
+                elif direction == "vertical":
+                    if self.direction.y > 0: self.hitbox_rect.bottom = sprite.rect.top
+                    if self.direction.y < 0: self.hitbox_rect.top = sprite.rect.bottom
     
     def destroy(self):
         self.death_time = pygame.time.get_ticks()
@@ -115,8 +122,11 @@ class Enemy(pygame.sprite.Sprite):
         surf.set_colorkey('black')
         self.image = surf
     
+    
     def death_timer(self):
+        global xp
         if pygame.time.get_ticks() - self.death_time >= self.death_duration:
+            self.player.add_xp(10)
             self.kill()
 
 
@@ -126,3 +136,4 @@ class Enemy(pygame.sprite.Sprite):
             self.animate(dt)
         else:
             self.death_timer()
+
