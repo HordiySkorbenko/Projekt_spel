@@ -18,6 +18,7 @@ class Game:
         self.running = True
         
         menu = Menu(self.display_surface)
+        self.game_clock = menu.main_menu()
         menu.main_menu()
 
         # groups 
@@ -146,7 +147,7 @@ class Game:
             self.display_surface.blit(fps_text, (10, 10))
 
 
-            self.clock_display.draw(self.display_surface)
+            self.game_clock.draw(self.display_surface)
             self.xp_bar.draw(self.display_surface)
 
 
