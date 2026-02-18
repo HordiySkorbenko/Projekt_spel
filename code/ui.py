@@ -34,3 +34,38 @@ class XPBar:
         level_text = self.font.render(
             f"Level {self.player.level}", True, (255, 255, 255))
         surface.blit(level_text, (self.x, self.y - 25))
+
+class Clock:
+    def __init__(self):
+        # Position: Top Middle
+        # WINDOW_WIDTH / 2 centers the starting point, so we subtract 
+        # a bit to center the actual text block
+        self.x = WINDOW_WIDTH // 2
+        self.y = 20
+        
+        # Font setup
+        self.font = pygame.font.SysFont("Arial", 24, bold=True)
+        self.text_color = (255, 255, 255)
+        self.shadow_color = (0, 0, 0)
+
+    def draw(self, surface):
+        # pygame.time.get_ticks() returns total milliseconds
+        total_seconds = pygame.time.get_ticks() // 1000
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+
+        # Format string to always show two digits 
+        time_string = f"{minutes:02}:{seconds:02}"
+        
+        # Render text
+        time_text = self.font.render(time_string, True, self.text_color)
+        
+        # Get rect for precise centering
+        text_rect = time_text.get_rect(midtop=(self.x, self.y))
+        
+        # Optional: Draw a subtle shadow for readability
+        shadow_text = self.font.render(time_string, True, self.shadow_color)
+        surface.blit(shadow_text, (text_rect.x + 2, text_rect.y + 2))
+        
+        # Draw the main text
+        surface.blit(time_text, text_rect)

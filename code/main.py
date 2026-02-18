@@ -6,7 +6,7 @@ from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
-from ui import XPBar
+from ui import XPBar, Clock
 
 class Game:
     def __init__(self):
@@ -38,7 +38,7 @@ class Game:
 
         self.shoot_sound = pygame.mixer.Sound(join('audio', 'shoot.wav'))
         self.shoot_sound.set_volume(0.2)
-        
+        self.clock_display = Clock()
         self.load_images()
         self.setup()
 
@@ -139,13 +139,14 @@ class Game:
             self.gun_timer()
             self.input()
             self.all_sprites.update(dt)
-
             # draw
             self.display_surface.fill('black')
             self.all_sprites.draw(self.player.rect.center)
             fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
             self.display_surface.blit(fps_text, (10, 10))
 
+
+            self.clock_display.draw(self.display_surface)
             self.xp_bar.draw(self.display_surface)
 
 
