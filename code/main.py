@@ -117,6 +117,7 @@ class Game:
         
     def player_collision(self):
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
+            
             self.running = False
                         
     def run(self):
