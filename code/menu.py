@@ -25,6 +25,7 @@ class Menu:
                     
             button_1 = pygame.Rect(WINDOW_WIDTH/2 - 250, WINDOW_HEIGHT/2, 400, 100)
             button_2 = pygame.Rect(WINDOW_WIDTH/2 - 250, WINDOW_HEIGHT/2 - 200, 400, 100)
+            button_3 = pygame.Rect(WINDOW_WIDTH/2 - 200, (WINDOW_HEIGHT/2)+ 200, 400, 100)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -46,10 +47,15 @@ class Menu:
             
             # Button Click Logic
             if button_1.collidepoint((mouse_x, mouse_y)) and click:
-                    running = False
+                self.clock_display.reset()
+                return self.clock_display
 
             if button_2.collidepoint((mouse_x, mouse_y)) and click:
                 self.difficulty_select()
+            
+            if button_3.collidepoint((mouse_x, mouse_y)) and click:
+                pass
+            
                     
               
            
@@ -57,13 +63,17 @@ class Menu:
             # ritar ut knapparna
             pygame.draw.rect(self.screen, (250, 250, 250), button_1)
             pygame.draw.rect(self.screen, (250, 250, 250), button_2)
+            pygame.draw.rect(self.screen, (250, 250, 250), button_3)
 
           
             # Draw text
             start_text = self.font_big.render("Start", True, (170, 150, 210))
             selection_text = self.font_small.render("Difficulty", True, (170, 150, 210))
+            highscores_text = self.font_big.render("Highscores", True, (170, 150, 210))
             self.screen.blit(start_text, start_text.get_rect(center=button_1.center))
             self.screen.blit(selection_text, selection_text.get_rect(center=button_2.center))
+            self.screen.blit(highscores_text, highscores_text.get_rect(center=button_3.center))
+
 
         
             pygame.display.update()
