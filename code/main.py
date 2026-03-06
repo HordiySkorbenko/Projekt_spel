@@ -16,13 +16,13 @@ class Game:
         pygame.display.set_caption('Survivor')
         self.clock = pygame.time.Clock()
         self.running = True
+        self.game_active = True
         
         menu = Menu(self.display_surface)
         self.game_clock = menu.main_menu()
         self.difficulty = menu.difficulty
         menu.main_menu()
         
-
         # groups 
         self.all_sprites = Allsprites()
         self.collision_sprites = pygame.sprite.Group()
@@ -36,7 +36,7 @@ class Game:
 
         #enemy timer
         self.enemy_event = pygame.event.custom_type()
-        pygame.time.set_timer(self.enemy_event,(1000//menu.difficulty))# Enemy spawn är mycket snabbare ju högre difficulty
+        pygame.time.set_timer(self.enemy_event,(1000//menu.difficulty))
         self.spawn_pos = []
 
         self.shoot_sound = pygame.mixer.Sound(join('audio', 'shoot.wav'))
@@ -44,15 +44,6 @@ class Game:
         self.clock_display = Clock()
         self.load_images()
         self.setup()
-
-    def bullet_collision(self):
-        collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
-
-        for bullet, enemies in collision_dict.items():
-            for enemy in enemies:
-                # Kontrollera att metoden finns innan vi anropar den
-                if hasattr(enemy, 'destroy'):
-                    enemy.destroy()
 
     def load_images(self):
         self.bullet_surf = pygame.image.load(join('image', 'gun','bullet.png')).convert_alpha()
@@ -62,16 +53,13 @@ class Game:
         for folder in folders:
             for folder_path,_,file_names in walk(join('image','enemies',folder)):
                 self.enemy_frames[folder] = []
-                for file_name in sorted(file_names, key= lambda name: int(name.split('.')[0])): # konvertera file path till int: 0.png till 0
+                for file_name in sorted(file_names, key= lambda name: int(name.split('.')[0])):
                     full_path = join(folder_path,file_name)
                     surf = pygame.image.load(full_path).convert_alpha()
                     self.enemy_frames[folder].append(surf)
 
-
-
-
     def input(self):
-        if pygame.mouse.get_pressed()[0] and self.can_shoot: #index 0 = vänster click
+        if pygame.mouse.get_pressed()[0] and self.can_shoot: 
             self.shoot_sound.play()
             pos = self.gun.rect.center + self.gun.player_direction * 50
             Bullet(self.bullet_surf,pos,self.gun.player_direction,(self.all_sprites, self.bullet_sprites))
@@ -81,12 +69,9 @@ class Game:
     def gun_timer(self):
         if not self.can_shoot:
             current_time = pygame.time.get_ticks()
-            
-            # Minska cooldown med 10% av originalet för varje level efter den första
             reduction = (self.player.level - 1) * 0.25
             current_cooldown = self.gun_cooldown * (1 - reduction)
             
-            # Max-gräns så man inte skjuter oändligt snabbt
             if current_time - self.shoot_time >= max(current_cooldown, 50):
                 self.can_shoot = True
     
@@ -104,12 +89,10 @@ class Game:
                 self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
                 self.gun = Gun(self.player,self.all_sprites)
                 self.xp_bar = XPBar(self.player)
-
             else:
                 self.spawn_pos.append((obj.x,obj.y))
 
     def bullet_collision(self):
-        # Denna rad ersätter hela din nuvarande loop och är extremt snabb
         collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
 
         for bullet, enemies in collision_dict.items():
@@ -118,46 +101,54 @@ class Game:
                     enemy.destroy()
         
     def player_collision(self):
+        # Good job using collide_mask for tighter hitboxes!
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
-            self.running = False
+            self.game_active = False # This triggers the death screen!
                         
     def run(self):
         font = pygame.font.SysFont("Arial", 18, bold=True)
 
         while self.running:
-            # dt 
-            dt = self.clock.tick() / 1000
-
-            # event loop 
+            # 1. EVENT LOOP (Must be outside of if game_active)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
-                if event.type == self.enemy_event:
+                
+                # Only spawn enemies if the game is actually active
+                if self.game_active and event.type == self.enemy_event:
                     Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites, self.difficulty)
+            
+            # 2. GAME LOGIC
+            if self.game_active:
+                dt = self.clock.tick() / 1000
+                
+                # Updates
+                self.gun_timer()
+                self.input()
+                self.all_sprites.update(dt)
+                self.bullet_collision()
+                self.player_collision()
+                
+                # Draw
+                self.display_surface.fill('black')
+                self.all_sprites.draw(self.player.rect.center)
+                
+                fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
+                self.display_surface.blit(fps_text, (10, 10))
+                self.game_clock.draw(self.display_surface)
+                self.xp_bar.draw(self.display_surface)
 
-            # update 
-            self.gun_timer()
-            self.input()
-            self.all_sprites.update(dt)
-            # draw
-            self.display_surface.fill('black')
-            self.all_sprites.draw(self.player.rect.center)
-            fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
-            self.display_surface.blit(fps_text, (10, 10))
-
-
-            self.game_clock.draw(self.display_surface)
-            self.xp_bar.draw(self.display_surface)
-
-
+            # 3. DEATH SCREEN LOGIC
+            else:
+                self.display_surface.fill((255, 255, 255)) # Fill with white
+                # You can add text rendering here like "GAME OVER"
+                
+            # 4. ALWAYS UPDATE THE DISPLAY
             pygame.display.update()
-            self.bullet_collision()
-            self.player_collision()
 
-        pygame.quit()
 
 if __name__ == '__main__':
     game = Game()
