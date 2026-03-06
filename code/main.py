@@ -19,7 +19,9 @@ class Game:
         
         menu = Menu(self.display_surface)
         self.game_clock = menu.main_menu()
+        self.difficulty = menu.difficulty
         menu.main_menu()
+        
 
         # groups 
         self.all_sprites = Allsprites()
@@ -34,7 +36,7 @@ class Game:
 
         #enemy timer
         self.enemy_event = pygame.event.custom_type()
-        pygame.time.set_timer(self.enemy_event,1000)# timer till 300 om hard difficulty
+        pygame.time.set_timer(self.enemy_event,(1000//menu.difficulty))# Enemy spawn är mycket snabbare ju högre difficulty
         self.spawn_pos = []
 
         self.shoot_sound = pygame.mixer.Sound(join('audio', 'shoot.wav'))
@@ -134,7 +136,7 @@ class Game:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
                 if event.type == self.enemy_event:
-                    Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites)
+                    Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites, self.difficulty)
 
             # update 
             self.gun_timer()

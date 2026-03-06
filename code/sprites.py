@@ -1,6 +1,7 @@
 from settings import *
 from math import atan2,degrees
 from player import Player
+from menu import Menu
 
 
 class Sprite(pygame.sprite.Sprite):
@@ -68,10 +69,12 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos,frames,groups,player,collision_sprites):
+    def __init__(self, pos,frames,groups,player,collision_sprites, difficulty):
         super().__init__(*groups)
         self.player = player
 
+        self.difficulty = difficulty
+        
         #animation
         self.frames, self.frame_index = frames, 0
         self.image = self.frames[self.frame_index]
@@ -82,11 +85,14 @@ class Enemy(pygame.sprite.Sprite):
         self.hitbox_rect = self.rect.inflate(-20,-40)
         self.collision_sprites = collision_sprites
         self.direction = pygame.Vector2()
-        self.speed = 150 # kanske 350 för hard difficulty
+        self.speed = 150 * self.difficulty  # kanske 350 för hard difficulty
         
         #timer
         self.death_time = 0
         self.death_duration = 400
+        
+        
+        
     def animate(self,dt):
         self.frame_index += self.animation_speed*dt
         self.image= self.frames[int(self.frame_index)% len(self.frames)]
