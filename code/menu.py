@@ -12,7 +12,8 @@ class Menu:
         except:
             self.font_big = pygame.font.SysFont("Arial", 50, bold=True)
             self.font_small = pygame.font.SysFont("Arial", 35, bold=True)
-            
+        
+        self.difficulty = 1
         self.clock_display = Clock()
         
     def main_menu(self):
@@ -83,7 +84,7 @@ class Menu:
         running = True
         
         click = False
-        
+
         while running:
             # bakgrund     
             self.screen.fill((0, 255, 0))
