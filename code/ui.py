@@ -72,29 +72,42 @@ class Clock:
         # Draw main text
         surface.blit(time_text, text_rect)
 
+# ui.py (eller där din GameOver-klass bor)
+import pygame
+from settings import *
+
 class GameOver:
     def __init__(self, display_surface):
         self.display_surface = display_surface
-        
-        # Setup fonts (using Arial to match your run loop)
-        self.title_font = pygame.font.SysFont("Arial", 100, bold=True)
-        self.instruction_font = pygame.font.SysFont("Arial", 30)
+        self.font = pygame.font.SysFont("Arial", 40, bold=True)
+        self.small_font = pygame.font.SysFont("Arial", 24)
 
-        self.overlay = pygame.Surface(self.display_surface.get_size(), pygame.SRCALPHA)
-        self.overlay.fill((255, 255, 255, 50)) 
+    def draw(self, top_scores):
+        # Rita bakgrund (t.ex. halvgenomskinlig svart)
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.display_surface.blit(overlay, (0,0))
 
-    def draw(self):
-
-        self.display_surface.blit(self.overlay, (0, 0))
-
-
-        title_surf = self.title_font.render("GAME OVER", True, (255, 50, 50)) # Red text
-        title_rect = title_surf.get_rect(center=(self.display_surface.get_width() / 2, self.display_surface.get_height() / 2 - 50))
+        # Rita "GAME OVER"
+        title_surf = self.font.render("GAME OVER", True, "white")
+        title_rect = title_surf.get_rect(center=(WINDOW_WIDTH // 2, 100))
         self.display_surface.blit(title_surf, title_rect)
 
-        instruct_surf = self.instruction_font.render("Press SPACE to Restart or ESC to Quit", True, (200, 200, 200)) # Light gray text
-        instruct_rect = instruct_surf.get_rect(center=(self.display_surface.get_width() / 2, self.display_surface.get_height() / 2 + 50))
-        self.display_surface.blit(instruct_surf, instruct_rect)
+        # Rita Leaderboard-rubrik
+        lb_title = self.small_font.render("TOP 5 SURVIVORS", True, "yellow")
+        self.display_surface.blit(lb_title, lb_title.get_rect(center=(WINDOW_WIDTH // 2, 200)))
+
+        # Loopa igenom poängen och rita dem
+        for i, entry in enumerate(top_scores):
+            score_text = f"{i+1}. XP: {entry['xp']} | Time: {entry['time']}"
+            score_surf = self.small_font.render(score_text, True, "white")
+            y_pos = 250 + (i * 40) # 40 pixlar mellan varje rad
+            self.display_surface.blit(score_surf, score_surf.get_rect(center=(WINDOW_WIDTH // 2, y_pos)))
+
+        # Instruktion
+        hint_surf = self.small_font.render("Press SPACE to Restart, Press ESC to close ", True, "gray")
+        self.display_surface.blit(hint_surf, hint_surf.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 100)))
 
 
 class Leaderboard:
@@ -102,16 +115,31 @@ class Leaderboard:
         self.filename = filename
 
     def save_score(self, time_str, xp_val):
-        new_entry = {"time": time_str, "xp": xp_val}
-        data = []
+            new_entry = {"time": time_str, "xp": xp_val}
+            data = []
 
-        if os.path.exists(self.filename):
+            if os.path.exists(self.filename):
+                with open(self.filename, 'r') as f:
+                    try:
+                        data = json.load(f)
+                    except: data = []
+
+            data.append(new_entry)
+
+            with open(self.filename, 'w') as f:
+                json.dump(data, f, indent=4)
+
+    def get_top_scores(self, limit=5):
+        if not os.path.exists(self.filename):
+            return []
+        
+        try:
             with open(self.filename, 'r') as f:
-                try:
-                    data = json.load(f)
-                except: data = []
-
-        data.append(new_entry)
-
-        with open(self.filename, 'w') as f:
-            json.dump(data, f, indent=4)
+                data = json.load(f)
+            
+            # Sortera listan baserat på XP (högst först)
+            # x['xp'] antar att din XP sparas som ett heltal
+            sorted_data = sorted(data, key=lambda x: x['xp'], reverse=True)
+            return sorted_data[:limit] # Returnera endast de 'limit' bästa
+        except (json.JSONDecodeError, KeyError):
+            return []
