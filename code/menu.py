@@ -16,17 +16,25 @@ class Menu:
         self.difficulty = 1
         self.clock_display = Clock()
         
+        self.logo = pygame.image.load("image/logo/logo1.png").convert_alpha()
+        self.logo_rect = self.logo.get_rect()
+        self.logo_rect.centerx = WINDOW_WIDTH // 2
+        self.logo_rect.y = 40
+        
     def main_menu(self):
         running = True
         click = False
         
         while running:
-            self.screen.fill((0, 255, 0))
+            for y in range(WINDOW_HEIGHT):
+                color = (20 + y//20, 10, 30 + y//25)
+                pygame.draw.line(self.screen, color, (0,y), (WINDOW_WIDTH,y))
+            self.screen.blit(self.logo, self.logo_rect)
             mouse_x, mouse_y = pygame.mouse.get_pos()
                     
-            button_1 = pygame.Rect(WINDOW_WIDTH/2 - 250, WINDOW_HEIGHT/2, 400, 100)
-            button_2 = pygame.Rect(WINDOW_WIDTH/2 - 250, WINDOW_HEIGHT/2 - 200, 400, 100)
-            button_3 = pygame.Rect(WINDOW_WIDTH/2 - 200, (WINDOW_HEIGHT/2)+ 200, 400, 100)
+            button_1 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2, 400, 100)
+            button_2 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2 - 200, 400, 100)
+            button_3 = pygame.Rect(WINDOW_WIDTH/2 - 940, (WINDOW_HEIGHT/2)+ 200, 400, 100)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -37,7 +45,7 @@ class Menu:
                     if event.key == pygame.K_RETURN:
                         # FIX: Reset and return the clock when Enter is pressed
                         self.clock_display.reset()
-                        return self.clock_display
+                        return self.clock_display   
                     elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         exit()
@@ -62,15 +70,15 @@ class Menu:
            
 
             # ritar ut knapparna
-            pygame.draw.rect(self.screen, (250, 250, 250), button_1)
-            pygame.draw.rect(self.screen, (250, 250, 250), button_2)
-            pygame.draw.rect(self.screen, (250, 250, 250), button_3)
+            self.draw_button(button_1, "Start", self.font_big)
+            self.draw_button(button_2, "Difficulty", self.font_small)
+            self.draw_button(button_3, "Highscores", self.font_big)
 
           
             # Draw text
-            start_text = self.font_big.render("Start", True, (170, 150, 210))
-            selection_text = self.font_small.render("Difficulty", True, (170, 150, 210))
-            highscores_text = self.font_big.render("Highscores", True, (170, 150, 210))
+            start_text = self.font_big.render("Start", True, (0, 0, 0))
+            selection_text = self.font_small.render("Difficulty", True, (0, 0, 0))
+            highscores_text = self.font_big.render("Highscores", True, (0, 0, 0))
             self.screen.blit(start_text, start_text.get_rect(center=button_1.center))
             self.screen.blit(selection_text, selection_text.get_rect(center=button_2.center))
             self.screen.blit(highscores_text, highscores_text.get_rect(center=button_3.center))
@@ -79,7 +87,25 @@ class Menu:
         
             pygame.display.update()
             click = False
-            
+    
+    def draw_button(self, rect, text, font):
+        mouse_pos = pygame.mouse.get_pos()
+
+        if rect.collidepoint(mouse_pos):
+            color = (200, 250, 200)   
+            border = (250, 0, 0)
+        else:
+            color = (250, 250, 250)
+            border = (80, 80, 80)
+
+        pygame.draw.rect(self.screen, color, rect)
+        pygame.draw.rect(self.screen, (0,0,0), rect, 6)
+        pygame.draw.rect(self.screen, border, rect.inflate(-6,-6), 3)
+        
+
+        text_surface = font.render(text, True, (40, 40, 40))
+        self.screen.blit(text_surface, text_surface.get_rect(center=rect.center))       
+         
     def difficulty_select(self):
         running = True
         
