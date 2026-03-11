@@ -1,5 +1,7 @@
+import json
 import pygame
 from settings import *
+import os
 
 class XPBar:
     def __init__(self, player, width=300, height=20, pos=None):
@@ -93,3 +95,23 @@ class GameOver:
         instruct_surf = self.instruction_font.render("Press SPACE to Restart or ESC to Quit", True, (200, 200, 200)) # Light gray text
         instruct_rect = instruct_surf.get_rect(center=(self.display_surface.get_width() / 2, self.display_surface.get_height() / 2 + 50))
         self.display_surface.blit(instruct_surf, instruct_rect)
+
+
+class Leaderboard:
+    def __init__(self, filename='leaderboard.json'):
+        self.filename = filename
+
+    def save_score(self, time_str, xp_val):
+        new_entry = {"time": time_str, "xp": xp_val}
+        data = []
+
+        if os.path.exists(self.filename):
+            with open(self.filename, 'r') as f:
+                try:
+                    data = json.load(f)
+                except: data = []
+
+        data.append(new_entry)
+
+        with open(self.filename, 'w') as f:
+            json.dump(data, f, indent=4)

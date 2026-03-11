@@ -6,7 +6,7 @@ from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
-from ui import XPBar, Clock, GameOver
+from ui import XPBar, Clock, GameOver,Leaderboard
 
 class Game:
     def __init__(self):
@@ -18,6 +18,7 @@ class Game:
         self.running = True
         self.game_active = True
         self.game_over_screen = GameOver(self.display_surface)
+        self.leaderboard_manager = Leaderboard()
         
         menu = Menu(self.display_surface)
         self.game_clock = menu.main_menu()
@@ -102,9 +103,16 @@ class Game:
                     enemy.destroy()
         
     def player_collision(self):
-        # Good job using collide_mask for tighter hitboxes!
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
-            self.game_active = False # This triggers the death screen!
+            if self.game_active:
+                # 1. Räkna ut värdena här i Game-klassen
+                elapsed_ms = pygame.time.get_ticks() - self.clock_display.start_ticks
+                time_str = f"{(elapsed_ms//60000):02}:{(elapsed_ms//1000)%60:02}"
+                
+                # 2. Skicka värdena till din leaderboard-instans
+                self.leaderboard_manager.save_score(time_str, self.player.xp)
+                
+                self.game_active = False
     def reset_game(self):
         # 1. Töm alla grupper helt
         self.all_sprites.empty()
