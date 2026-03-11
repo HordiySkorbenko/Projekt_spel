@@ -6,7 +6,7 @@ from sprites import *
 from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
-from ui import XPBar, Clock
+from ui import XPBar, Clock, GameOver
 
 class Game:
     def __init__(self):
@@ -17,6 +17,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.game_active = True
+        self.game_over_screen = GameOver(self.display_surface)
         
         menu = Menu(self.display_surface)
         self.game_clock = menu.main_menu()
@@ -104,50 +105,88 @@ class Game:
         # Good job using collide_mask for tighter hitboxes!
         if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
             self.game_active = False # This triggers the death screen!
+    def reset_game(self):
+        # 1. Töm alla grupper helt
+        self.all_sprites.empty()
+        self.collision_sprites.empty()
+        self.enemy_sprites.empty()
+        self.bullet_sprites.empty()
+        
+        # 2. Återställ viktiga variabler och listor
+        self.spawn_pos = []
+        self.can_shoot = True
+        self.shoot_time = 0
+        # 3. Återställ klockan
+        self.clock_display.reset() 
+        self.game_clock = self.clock_display
+
+        # 4. Kör din befintliga setup-metod
+        self.setup()
+        
+        # 5. Aktivera spelet igen
+        self.game_active = True
+
+        
+#laddar om all som ska vara på skärmen
+        map = load_pygame(join('data', 'maps', 'world.tmx'))
+        for obj in map.get_layer_by_name('Entities'):
+            if obj.name == 'Player':
+                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                self.gun = Gun(self.player, self.all_sprites)
+                self.xp_bar = XPBar(self.player)
+            
+        #ritar allt
+                
+        self.can_shoot = True
+        self.shoot_time = 0
+        
+        self.clock_display = Clock() 
+        
+        self.game_active = True
                         
     def run(self):
-        font = pygame.font.SysFont("Arial", 18, bold=True)
+            font = pygame.font.SysFont("Arial", 18, bold=True)
 
-        while self.running:
-            # 1. EVENT LOOP (Must be outside of if game_active)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+            while self.running:
+                # 1. EVENT LOOP
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
                         self.running = False
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self.running = False
+                        
+                        
+                        if not self.game_active and event.key == pygame.K_SPACE:
+                            self.reset_game()
+                            
+                    
+                    if self.game_active and event.type == self.enemy_event:
+                        Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites, self.difficulty)
                 
-                # Only spawn enemies if the game is actually active
-                if self.game_active and event.type == self.enemy_event:
-                    Enemy(choice(self.spawn_pos),choice(list(self.enemy_frames.values())), (self.all_sprites,self.enemy_sprites),self.player,self.collision_sprites, self.difficulty)
-            
-            # 2. GAME LOGIC
-            if self.game_active:
-                dt = self.clock.tick() / 1000
                 
-                # Updates
-                self.gun_timer()
-                self.input()
-                self.all_sprites.update(dt)
-                self.bullet_collision()
-                self.player_collision()
-                
-                # Draw
-                self.display_surface.fill('black')
-                self.all_sprites.draw(self.player.rect.center)
-                
-                fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
-                self.display_surface.blit(fps_text, (10, 10))
-                self.game_clock.draw(self.display_surface)
-                self.xp_bar.draw(self.display_surface)
+                if self.game_active:
+                    dt = self.clock.tick() / 1000
+                    
+                    self.gun_timer()
+                    self.input()
+                    self.all_sprites.update(dt)
+                    self.bullet_collision()
+                    self.player_collision()
+                    
+                    self.display_surface.fill('black')
+                    self.all_sprites.draw(self.player.rect.center)
+                    
+                    fps_text = font.render(str(int(self.clock.get_fps())), True, (255, 0, 0))
+                    self.display_surface.blit(fps_text, (10, 10))
+                    self.game_clock.draw(self.display_surface)
+                    self.xp_bar.draw(self.display_surface)
 
-            # 3. DEATH SCREEN LOGIC
-            else:
-                self.display_surface.fill((255, 255, 255)) # Fill with white
-                # You can add text rendering here like "GAME OVER"
-                
-            # 4. ALWAYS UPDATE THE DISPLAY
-            pygame.display.update()
+                else:
+                    self.game_over_screen.draw()
+                    
+
+                pygame.display.update()
 
 
 if __name__ == '__main__':

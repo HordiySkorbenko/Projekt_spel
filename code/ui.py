@@ -46,6 +46,7 @@ class Clock:
     def reset(self):
         """Captures the current time as the new starting point (0:00)"""
         self.start_ticks = pygame.time.get_ticks()
+        return self
             
     def draw(self, surface):
         # FIX: Subtract start_ticks from current time to get elapsed time
@@ -68,3 +69,27 @@ class Clock:
         
         # Draw main text
         surface.blit(time_text, text_rect)
+
+class GameOver:
+    def __init__(self, display_surface):
+        self.display_surface = display_surface
+        
+        # Setup fonts (using Arial to match your run loop)
+        self.title_font = pygame.font.SysFont("Arial", 100, bold=True)
+        self.instruction_font = pygame.font.SysFont("Arial", 30)
+
+        self.overlay = pygame.Surface(self.display_surface.get_size(), pygame.SRCALPHA)
+        self.overlay.fill((255, 255, 255, 50)) 
+
+    def draw(self):
+
+        self.display_surface.blit(self.overlay, (0, 0))
+
+
+        title_surf = self.title_font.render("GAME OVER", True, (255, 50, 50)) # Red text
+        title_rect = title_surf.get_rect(center=(self.display_surface.get_width() / 2, self.display_surface.get_height() / 2 - 50))
+        self.display_surface.blit(title_surf, title_rect)
+
+        instruct_surf = self.instruction_font.render("Press SPACE to Restart or ESC to Quit", True, (200, 200, 200)) # Light gray text
+        instruct_rect = instruct_surf.get_rect(center=(self.display_surface.get_width() / 2, self.display_surface.get_height() / 2 + 50))
+        self.display_surface.blit(instruct_surf, instruct_rect)
