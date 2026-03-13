@@ -82,24 +82,20 @@ class Game:
         generator = MapGenerator(width_tiles=52, height_tiles=50)
         map_data = generator.generate()
 
-        # Земля
         for x, y, surf in map_data['ground']:
             Sprite((x, y), surf, self.all_sprites)
 
-        # Об'єкти
         for x, y, surf, has_collision in map_data['objects']:
             if has_collision:
                 CollisionSprite((x, y), surf, (self.all_sprites, self.collision_sprites))
             else:
                 Sprite((x, y), surf, self.all_sprites)
 
-        # Гравець
         px, py = map_data['player_pos']
         self.player = Player((px, py), self.all_sprites, self.collision_sprites)
         self.gun = Gun(self.player, self.all_sprites)
         self.xp_bar = XPBar(self.player)
 
-        # Спавн ворогів
         self.spawn_pos = map_data['spawn_positions']
 
     def bullet_collision(self):
