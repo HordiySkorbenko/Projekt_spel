@@ -7,6 +7,7 @@ from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
+from map_generator import MapGenerator
 
 class Game:
     def __init__(self):
@@ -78,21 +79,28 @@ class Game:
                 self.can_shoot = True
     
     def setup(self):
-        map = load_pygame(join('data','maps', 'world.tmx'))
-        
-        for x,y, image in map.get_layer_by_name('Ground').tiles():
-            Sprite((x * TILE_SIZE, y * TILE_SIZE), image, self.all_sprites,)  
-        for obj in map.get_layer_by_name('Objects'):
-            CollisionSprite((obj.x, obj.y), obj.image, (self.all_sprites, self.collision_sprites))
-        for obj in map.get_layer_by_name('Collisions'):
-            CollisionSprite((obj.x, obj.y), pygame.Surface((obj.width, obj.height)), self.collision_sprites)
-        for obj in map.get_layer_by_name('Entities'):
-            if obj.name == 'Player':
-                self.player = Player((obj.x,obj.y),self.all_sprites,self.collision_sprites)
-                self.gun = Gun(self.player,self.all_sprites)
-                self.xp_bar = XPBar(self.player)
+        generator = MapGenerator(width_tiles=52, height_tiles=50)
+        map_data = generator.generate()
+
+        # Земля
+        for x, y, surf in map_data['ground']:
+            Sprite((x, y), surf, self.all_sprites)
+
+        # Об'єкти
+        for x, y, surf, has_collision in map_data['objects']:
+            if has_collision:
+                CollisionSprite((x, y), surf, (self.all_sprites, self.collision_sprites))
             else:
-                self.spawn_pos.append((obj.x,obj.y))
+                Sprite((x, y), surf, self.all_sprites)
+
+        # Гравець
+        px, py = map_data['player_pos']
+        self.player = Player((px, py), self.all_sprites, self.collision_sprites)
+        self.gun = Gun(self.player, self.all_sprites)
+        self.xp_bar = XPBar(self.player)
+
+        # Спавн ворогів
+        self.spawn_pos = map_data['spawn_positions']
 
     def bullet_collision(self):
         collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)

@@ -20,6 +20,8 @@ class Menu:
         self.logo_rect = self.logo.get_rect()
         self.logo_rect.centerx = WINDOW_WIDTH // 2
         self.logo_rect.y = 40
+        self.logo_y = 40
+        self.logo_dir = 1
         
     def main_menu(self):
         running = True
@@ -31,6 +33,8 @@ class Menu:
                 pygame.draw.line(self.screen, color, (0,y), (WINDOW_WIDTH,y))
             self.screen.blit(self.logo, self.logo_rect)
             mouse_x, mouse_y = pygame.mouse.get_pos()
+            
+            
                     
             button_1 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2, 400, 100)
             button_2 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2 - 200, 400, 100)
