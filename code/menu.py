@@ -1,6 +1,7 @@
 import pygame
 from settings import *
-from ui import Clock
+from ui import Clock, DisplayLeaderboard,Leaderboard
+
 
 
 class Menu:
@@ -23,6 +24,8 @@ class Menu:
         self.logo_rect.y = 40
         self.logo_y = 40
         self.logo_dir = 1
+        self.leaderboard_view = DisplayLeaderboard(self.screen)
+        self.leaderboard_manager = Leaderboard()
         
     def main_menu(self):
         running = True
@@ -68,7 +71,7 @@ class Menu:
                 self.difficulty_select()
             
             if button_3.collidepoint((mouse_x, mouse_y)) and click:
-                pass
+                self.show_leaderboard()
             
                     
               
@@ -164,6 +167,29 @@ class Menu:
                     running = False
 
             pygame.display.update()
+    def show_leaderboard(self):
+            running = True
+            
+            # Hämta de 10 bästa poängen (eller hur många du vill visa)
+            top_scores = self.leaderboard_manager.get_top_scores(10)
+
+            while running:
+                # 1. Måla en bakgrundsfärg (t.ex. mörkgrå/svart)
+                self.screen.fill((20, 20, 30))
+                
+                # 2. Rita ut själva leaderboarden
+                self.leaderboard_view.draw(top_scores)
+                
+                # 3. Hantera inputs (Lyssna efter ESC)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        # Gå tillbaka till main_menu genom att bryta loopen
+                        running = False 
+
+                pygame.display.update()
 
 
     
