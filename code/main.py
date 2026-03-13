@@ -127,6 +127,7 @@ class Game:
         self.collision_sprites.empty()
         self.enemy_sprites.empty()
         self.bullet_sprites.empty()
+        self.player.kill()
         
         # 2. Återställ viktiga variabler och listor
         self.spawn_pos = []

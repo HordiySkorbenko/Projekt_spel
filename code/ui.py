@@ -143,3 +143,68 @@ class Leaderboard:
             return sorted_data[:limit] # Returnera endast de 'limit' bästa
         except (json.JSONDecodeError, KeyError):
             return []
+
+# ui.py eller en ny fil som heter leaderboard_ui.py
+import pygame
+from settings import *
+
+class DisplayLeaderboard:
+    def __init__(self, display_surface):
+        self.display_surface = display_surface
+        # Vi använder lite olika typsnittsstorlekar för snygg hierarki
+        self.title_font = pygame.font.SysFont("Arial", 48, bold=True)
+        self.header_font = pygame.font.SysFont("Arial", 28, bold=True)
+        self.font = pygame.font.SysFont("Arial", 24)
+        
+        # Färger
+        self.colors = {
+            'text': (255, 255, 255),
+            'gold': (255, 215, 0),
+            'background': (20, 20, 30),
+            'row_even': (40, 40, 50),
+            'row_odd': (30, 30, 40)
+        }
+
+    def draw(self, top_scores):
+        # 1. Rita en snygg bakgrundsplatta (centrerad)
+        bg_rect = pygame.Rect(0, 0, 500, 600)
+        bg_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+        pygame.draw.rect(self.display_surface, self.colors['background'], bg_rect, border_radius=15)
+        pygame.draw.rect(self.display_surface, self.colors['gold'], bg_rect, width=2, border_radius=15)
+
+        # 2. Rubrik
+        title_surf = self.title_font.render("LEADERBOARD", True, self.colors['gold'])
+        title_rect = title_surf.get_rect(center=(WINDOW_WIDTH // 2, bg_rect.top + 50))
+        self.display_surface.blit(title_surf, title_rect)
+
+        # 3. Kolumnrubriker
+        header_y = bg_rect.top + 120
+        rank_h = self.header_font.render("Rank", True, self.colors['gold'])
+        xp_h = self.header_font.render("XP", True, self.colors['gold'])
+        time_h = self.header_font.render("Time", True, self.colors['gold'])
+        
+        self.display_surface.blit(rank_h, (bg_rect.left + 50, header_y))
+        self.display_surface.blit(xp_h, (bg_rect.left + 200, header_y))
+        self.display_surface.blit(time_h, (bg_rect.left + 350, header_y))
+
+        # 4. Rita rader för varje poäng
+        for i, entry in enumerate(top_scores):
+            row_y = header_y + 50 + (i * 45)
+            
+            # Rita en rad-bakgrund för varannan rad (zebra-striping)
+            if i % 2 == 0:
+                row_rect = pygame.Rect(bg_rect.left + 20, row_y - 5, bg_rect.width - 40, 40)
+                pygame.draw.rect(self.display_surface, self.colors['row_even'], row_rect, border_radius=5)
+
+            # Text för varje kolumn
+            rank_text = self.font.render(f"#{i+1}", True, self.colors['text'])
+            xp_text = self.font.render(str(entry['xp']), True, self.colors['text'])
+            time_text = self.font.render(entry['time'], True, self.colors['text'])
+
+            self.display_surface.blit(rank_text, (bg_rect.left + 60, row_y))
+            self.display_surface.blit(xp_text, (bg_rect.left + 200, row_y))
+            self.display_surface.blit(time_text, (bg_rect.left + 350, row_y))
+
+        # 5. Instruktion för att gå tillbaka
+        exit_text = self.font.render("Press ESC to Close", True, (150, 150, 150))
+        self.display_surface.blit(exit_text, exit_text.get_rect(center=(WINDOW_WIDTH // 2, bg_rect.bottom - 40)))
