@@ -90,3 +90,24 @@ class MapGenerator:
                         map_data['objects'].append({'pos': pos, 'image': img, 'type': 'rock'})
 
         return map_data
+    
+"""
+def setup(self):
+        self.spawn_pos = []
+        map_gen = MapGenerator()
+        map_data = map_gen.generate_map(50, 50) # 50x50 rutor stor karta
+        
+        # Rita marken och lägg till spawn-punkter
+        for tile in map_data['ground']:
+            Sprite(tile['pos'], tile['image'], self.all_sprites)
+            self.spawn_pos.append(tile['pos']) # Alla gräsrutor är nu okej för fiender att spawna på
+            
+        # Placera ut objekt och kollisioner
+        for obj in map_data['objects']:
+            CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
+            
+        # Sätt spelarens position
+        start_x, start_y = map_data['spawn_pos']
+        self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
+        # ... din resterande setup-kod för Gun och XPBar ...
+"""

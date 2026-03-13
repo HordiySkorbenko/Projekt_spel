@@ -7,7 +7,7 @@ from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
-from map_generator import MapGenerator
+from code.map_generator_temp import MapGenerator
 
 class Game:
     def __init__(self):
@@ -77,31 +77,38 @@ class Game:
             
             if current_time - self.shoot_time >= max(current_cooldown, 50):
                 self.can_shoot = True
-    
+        
     def setup(self):
-        generator = MapGenerator(width_tiles=52, height_tiles=50)
-        map_data = generator.generate()
-
-        # Земля
-        for x, y, surf in map_data['ground']:
-            Sprite((x, y), surf, self.all_sprites)
-
-        # Об'єкти
-        for x, y, surf, has_collision in map_data['objects']:
-            if has_collision:
-                CollisionSprite((x, y), surf, (self.all_sprites, self.collision_sprites))
-            else:
-                Sprite((x, y), surf, self.all_sprites)
-
-        # Гравець
-        px, py = map_data['player_pos']
-        self.player = Player((px, py), self.all_sprites, self.collision_sprites)
-        self.gun = Gun(self.player, self.all_sprites)
-        self.xp_bar = XPBar(self.player)
-
-        # Спавн ворогів
-        self.spawn_pos = map_data['spawn_positions']
-
+            self.spawn_pos = []
+            map_gen = MapGenerator()
+            map_data = map_gen.generate_map(50, 50) # 50x50 rutor stor karta
+            
+            # Rita marken och lägg till spawn-punkter
+            for tile in map_data['ground']:
+                Sprite(tile['pos'], tile['image'], self.all_sprites)
+                self.spawn_pos.append(tile['pos']) # Alla gräsrutor är nu okej för fiender att spawna på
+                
+            # Placera ut objekt och kollisioner
+            for obj in map_data['objects']:
+                CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
+                
+            # Sätt spelarens position
+            start_x, start_y = map_data['spawn_pos']
+            self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
+            # ... din resterande setup-kod för Gun och XPBar ...
+                
+            # 3. Spelarens startposition (t.ex. mitten av kartan)
+            start_x, start_y = map_data['spawn_pos']
+            self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
+            self.gun = Gun(self.player, self.all_sprites)
+            self.xp_bar = XPBar(self.player)
+            
+            # 4. Sätt fiendernas spawn points utanför skärmen 
+            # (Eller låt dem spawna på slumpmässiga 'grass'-tiles en bit bort)
+            for tile in map_data['ground']:
+                # Lägg till alla positioner utom vatten som möjliga spawn-pos för fiender
+                if tile['image'] == map_gen.terrain_tiles['grass']:
+                    self.spawn_pos.append(tile['pos'])
     def bullet_collision(self):
         collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
 
