@@ -2,6 +2,7 @@ import pygame
 from settings import *
 from ui import Clock
 
+
 class Menu:
     def __init__(self, screen):
         self.screen = screen

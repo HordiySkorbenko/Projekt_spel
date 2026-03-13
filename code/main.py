@@ -199,7 +199,8 @@ class Game:
                     self.xp_bar.draw(self.display_surface)
 
                 else:
-                    self.game_over_screen.draw()
+                    top_five = self.leaderboard_manager.get_top_scores(5)
+                    self.game_over_screen.draw(top_five)
                     
 
                 pygame.display.update()
