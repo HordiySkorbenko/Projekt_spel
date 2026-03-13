@@ -83,16 +83,17 @@ class Game:
             map_gen = MapGenerator()
             map_data = map_gen.generate_map(50, 50) # 50x50 rutor stor karta
             
-            # Rita marken och lägg till spawn-punkter
+            # 1. Rita marken och lägg till spawn-punkter för fiender (bara gräs)
             for tile in map_data['ground']:
                 Sprite(tile['pos'], tile['image'], self.all_sprites)
-                self.spawn_pos.append(tile['pos']) # Alla gräsrutor är nu okej för fiender att spawna på
+                if tile['image'] == map_gen.terrain_tiles['grass']:
+                    self.spawn_pos.append(tile['pos'])
                 
-            # Placera ut objekt och kollisioner
+            # 2. Placera ut objekt och kollisioner
             for obj in map_data['objects']:
                 CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
                 
-            # 3. Spelarens startposition (t.ex. mitten av kartan)
+            # 3. Sätt spelarens position och UI (Bara EN gång!)
             start_x, start_y = map_data['spawn_pos']
             self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
             self.gun = Gun(self.player, self.all_sprites)
@@ -129,17 +130,16 @@ class Game:
         self.collision_sprites.empty()
         self.enemy_sprites.empty()
         self.bullet_sprites.empty()
-        self.player.kill()
         
-        # 2. Återställ viktiga variabler och listor
-
+        # 2. Återställ viktiga variabler
         self.can_shoot = True
         self.shoot_time = 0
+        
         # 3. Återställ klockan
         self.clock_display.reset() 
         self.game_clock = self.clock_display
 
-        # 4. Kör din befintliga setup-metod
+        # 4. Kör din befintliga setup-metod (Detta bygger kartan och skapar EN spelare)
         self.setup()
         
         # 5. Aktivera spelet igen
@@ -150,7 +150,7 @@ class Game:
         map = load_pygame(join('data', 'maps', 'world.tmx'))
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
-                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                #self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
                 self.gun = Gun(self.player, self.all_sprites)
                 self.xp_bar = XPBar(self.player)
             

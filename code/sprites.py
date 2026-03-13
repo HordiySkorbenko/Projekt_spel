@@ -69,48 +69,60 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, pos,frames,groups,player,collision_sprites, difficulty):
+    def __init__(self, pos, frames, groups, player, collision_sprites, difficulty):
         super().__init__(*groups)
         self.player = player
-
         self.difficulty = difficulty
         
-        #animation
+        # 1. Track exactly when this enemy was spawned
+        self.spawn_time = pygame.time.get_ticks()
+        
+        # 2. Limit the max number of enemies to 25
+        enemy_group = groups[1] # groups[1] is self.enemy_sprites from your Game class
+        if len(enemy_group) > 25:
+            # Find the sprite with the lowest spawn_time (the oldest)
+            oldest_enemy = min(enemy_group.sprites(), key=lambda enemy: enemy.spawn_time)
+            oldest_enemy.kill() # Completely removes it from all groups
+
+        # animation
         self.frames, self.frame_index = frames, 0
         self.image = self.frames[self.frame_index]
         self.animation_speed = 6
 
-        #rect
+        # rect
         self.rect = self.image.get_rect(center = pos)
         self.hitbox_rect = self.rect.inflate(-20,-40)
         self.collision_sprites = collision_sprites
         self.direction = pygame.Vector2()
         self.speed = 150 * self.difficulty  # kanske 350 för hard difficulty
         
-        #timer
+        # timer
         self.death_time = 0
         self.death_duration = 400
         
-        
-        
-    def animate(self,dt):
-        self.frame_index += self.animation_speed*dt
-        self.image= self.frames[int(self.frame_index)% len(self.frames)]
-    def move (self,dt):
-        #get direction
+    def animate(self, dt):
+        self.frame_index += self.animation_speed * dt
+        self.image = self.frames[int(self.frame_index) % len(self.frames)]
+
+    def move (self, dt):
+        # get direction
         player_pos = pygame.Vector2(self.player.rect.center)
         enemy_pos = pygame.Vector2(self.rect.center)
-        self.direction = (player_pos-enemy_pos).normalize()
         
-        #move rect + collisions
-        self.hitbox_rect.x += self.direction.x *self.speed * dt 
+        # Prevent division by zero if enemy spawns exactly on player
+        if player_pos != enemy_pos:
+            self.direction = (player_pos - enemy_pos).normalize()
+        else:
+            self.direction = pygame.Vector2()
+        
+        # move rect + collisions
+        self.hitbox_rect.x += self.direction.x * self.speed * dt 
         self.collision('horizontal')
-        self.hitbox_rect.y += self.direction.y *self.speed * dt 
+        self.hitbox_rect.y += self.direction.y * self.speed * dt 
         self.collision('vertical')
         self.rect.center = self.hitbox_rect.center
 
     def collision(self, direction):
-        
         overlap_sprites = pygame.sprite.spritecollide(self, self.collision_sprites, False)
         
         for sprite in overlap_sprites:
@@ -128,13 +140,10 @@ class Enemy(pygame.sprite.Sprite):
         surf.set_colorkey('black')
         self.image = surf
     
-    
     def death_timer(self):
-        global xp
         if pygame.time.get_ticks() - self.death_time >= self.death_duration:
             self.player.add_xp(10)
             self.kill()
-
 
     def update(self, dt):
         if self.death_time == 0:    
@@ -142,4 +151,3 @@ class Enemy(pygame.sprite.Sprite):
             self.animate(dt)
         else:
             self.death_timer()
-
