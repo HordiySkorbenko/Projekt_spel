@@ -7,7 +7,7 @@ from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
-from mapgen_temp import MapGenerator
+from code.mapgen import MapGenerator
 
 class Game:
     def __init__(self):
@@ -92,11 +92,6 @@ class Game:
             for obj in map_data['objects']:
                 CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
                 
-            # Sätt spelarens position
-            start_x, start_y = map_data['spawn_pos']
-            self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
-        # ... din resterande setup-kod för Gun och XPBar ...
-                
             # 3. Spelarens startposition (t.ex. mitten av kartan)
             start_x, start_y = map_data['spawn_pos']
             self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
@@ -137,7 +132,7 @@ class Game:
         self.player.kill()
         
         # 2. Återställ viktiga variabler och listor
-        self.spawn_pos = []
+
         self.can_shoot = True
         self.shoot_time = 0
         # 3. Återställ klockan
