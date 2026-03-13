@@ -1,92 +1,217 @@
+from settings import *
 import pygame
 import random
-from os.path import join
+
+# ─────────────────────────────────────────────
+# Тайлсет: 10 колонок, 64x64, 210 тайлів
+# Індекси (як в TMX, починаються з 1)
+# ─────────────────────────────────────────────
+
+# ЗЕМЛЯ
+GRASS   = 42   # зелена трава (основний фон)
+SAND    = 52   # пісок / світла земля (якщо є)
+WATER   = 102  # вода / темні тайли
+
+# ПАТЕРНИ ДЛЯ ОСТРІВЦІВ (з TMX: рядки типу кутів+стін)
+# Формат: верхній-лівий кут починається, рядки знизу вниз
+ISLAND_PATTERNS = [
+    # Маленький острівець 3x3 (зелений)
+    [
+        [ 1,  2,  3],
+        [11, 12, 13],
+        [21, 22, 23],
+    ],
+    # Середній острівець 4x3
+    [
+        [ 1,  2,  2,  3],
+        [11, 12, 12, 13],
+        [21, 22, 22, 23],
+    ],
+    # Великий острівець 5x4
+    [
+        [ 1,  2,  2,  2,  3],
+        [11, 12, 12, 12, 13],
+        [11, 12, 12, 12, 13],
+        [21, 22, 22, 22, 23],
+    ],
+    # Піщаний острівець
+    [
+        [31, 32, 33],
+        [41, 42, 43],
+        [51, 52, 53],
+    ],
+    # Ще один варіант (зі зміщенням у тайлсеті)
+    [
+        [61, 62, 63],
+        [71, 72, 73],
+        [81, 82, 83],
+    ],
+]
+
+# Декоративні елементи (1 тайл, без колізії)
+DECO_TILES = [34, 35, 36, 44, 45, 46, 54, 55, 56]
+
+# Тайли з колізією (стіни, об'єкти)
+COLLISION_TILE_IDS = set(range(91, 115))  # верхні рядки тайлсету — об'єкти
+
 
 class MapGenerator:
-    def __init__(self, tile_size=64):
-        self.tile_size = tile_size
-        self.terrain_tiles = self.load_terrain_tiles()
-        self.object_images = self.load_object_images()
+    def __init__(self, width_tiles=52, height_tiles=50):
+        self.width = width_tiles
+        self.height = height_tiles
+        self.tileset = self._load_tileset()
 
-    def load_terrain_tiles(self):
-        # Laddar in din tileset och klipper ut gräset
-        tileset_img = pygame.image.load(join('data', 'graphics', 'tilesets', 'world_tileset.png')).convert_alpha()
-        columns = 10 
-        tiles = {}
-        
-        # Gräs är index 41 (ID 42 i Tiled)
-        grass_index = 41
-        
-        x = (grass_index % columns) * self.tile_size
-        y = (grass_index // columns) * self.tile_size
-        surf = pygame.Surface((self.tile_size, self.tile_size), pygame.SRCALPHA)
-        surf.blit(tileset_img, (0, 0), (x, y, self.tile_size, self.tile_size))
-        tiles['grass'] = surf
-            
-        return tiles
+    def _load_tileset(self):
+        """Нарізає world_tileset.png на словник {tile_id: Surface}"""
+        tileset = {}
+        try:
+            sheet = pygame.image.load(
+                join('data', 'graphics', 'tilesets', 'world_tileset.png')
+            ).convert_alpha()
 
-    def load_object_images(self):
-        # Laddar alla objekt från din data-mapp
+            cols = 10   # з .tsx: columns="10"
+            tile_w = 64
+            tile_h = 64
+
+            tile_id = 1
+            sheet_w, sheet_h = sheet.get_size()
+            rows = sheet_h // tile_h
+
+            for row in range(rows):
+                for col in range(cols):
+                    surf = pygame.Surface((tile_w, tile_h), pygame.SRCALPHA)
+                    surf.blit(sheet, (0, 0),
+                              pygame.Rect(col * tile_w, row * tile_h, tile_w, tile_h))
+                    tileset[tile_id] = surf
+                    tile_id += 1
+
+            print(f"[MapGen] Завантажено {len(tileset)} тайлів")
+        except Exception as e:
+            print(f"[MapGen] ПОМИЛКА завантаження тайлсету: {e}")
+            # Fallback — зелений квадрат під ID 42
+            surf = pygame.Surface((64, 64))
+            surf.fill((34, 139, 34))
+            for i in range(1, 211):
+                tileset[i] = surf
+
+        return tileset
+
+    def get_tile(self, tile_id):
+        """Безпечно отримати тайл за ID"""
+        return self.tileset.get(tile_id, self.tileset.get(GRASS))
+
+    # ─────────────────────────────────────────
+    def generate(self):
+        """
+        Генерує карту і повертає:
+        {
+          'ground':   [(x, y, surf), ...],
+          'objects':  [(x, y, surf, has_collision), ...],
+          'player_pos': (x, y),
+          'spawn_positions': [(x, y), ...]
+        }
+        """
+        ground  = []
+        objects = []
+        blocked = set()   # (col, row) зайняті об'єктами
+
+        # ── 1. ФОН — заповнюємо ВОДОЮ (тайл 102) ──
+        bg_tile = self.get_tile(WATER)
+        for row in range(self.height):
+            for col in range(self.width):
+                ground.append((col * TILE_SIZE, row * TILE_SIZE, bg_tile))
+
+        # ── 2. ОСТРІВЦІ ──
+        # Гарантований великий острів у центрі
+        center_col = self.width  // 2
+        center_row = self.height // 2
+        self._place_pattern(
+            ground, blocked,
+            ISLAND_PATTERNS[2],   # великий зелений острів
+            center_col - 2, center_row - 2
+        )
+
+        # Рандомні острівці по карті
+        num_islands = random.randint(8, 16)
+        for _ in range(num_islands):
+            pattern = random.choice(ISLAND_PATTERNS)
+            ph = len(pattern)
+            pw = len(pattern[0])
+
+            # Не перетинаємо центральний спавн гравця
+            attempts = 0
+            while attempts < 20:
+                col = random.randint(1, self.width  - pw - 1)
+                row = random.randint(1, self.height - ph - 1)
+
+                too_close = (
+                    abs(col - center_col) < 6 and
+                    abs(row - center_row) < 6
+                )
+                if not too_close:
+                    self._place_pattern(ground, blocked, pattern, col, row)
+                    break
+                attempts += 1
+
+        # ── 3. ДЕКОРАЦІЇ на острівцях ──
+        island_cells = {(x // TILE_SIZE, y // TILE_SIZE)
+                        for x, y, _ in ground
+                        if self._is_land_tile(x // TILE_SIZE, y // TILE_SIZE, blocked)}
+
+        num_decos = random.randint(15, 30)
+        deco_placed = 0
+        for _ in range(200):
+            if deco_placed >= num_decos:
+                break
+            col = random.randint(0, self.width  - 1)
+            row = random.randint(0, self.height - 1)
+
+            if (col, row) in blocked:
+                continue
+            # Тільки не в зоні спавну гравця
+            if abs(col - center_col) < 3 and abs(row - center_row) < 3:
+                continue
+
+            deco_id = random.choice(DECO_TILES)
+            surf = self.get_tile(deco_id)
+            objects.append((col * TILE_SIZE, row * TILE_SIZE, surf, False))
+            deco_placed += 1
+
+        # ── 4. ПОЗИЦІЯ ГРАВЦЯ ──
+        player_pos = (center_col * TILE_SIZE, center_row * TILE_SIZE)
+
+        # ── 5. СПАВН ВОРОГІВ — на краях карти ──
+        spawn_positions = []
+        step = 4
+        for col in range(0, self.width, step):
+            spawn_positions.append((col * TILE_SIZE, 0))
+            spawn_positions.append((col * TILE_SIZE, (self.height - 1) * TILE_SIZE))
+        for row in range(0, self.height, step):
+            spawn_positions.append((0, row * TILE_SIZE))
+            spawn_positions.append(((self.width - 1) * TILE_SIZE, row * TILE_SIZE))
+
         return {
-            'tree': pygame.image.load(join('data', 'graphics', 'objects', 'green_tree.png')).convert_alpha(),
-            'tree_small': pygame.image.load(join('data', 'graphics', 'objects', 'green_tree_small.png')).convert_alpha(),
-            'rock1': pygame.image.load(join('data', 'graphics', 'objects', 'grassrock1.png')).convert_alpha(),
-            'ruin': pygame.image.load(join('data', 'graphics', 'objects', 'ruin_pillar.png')).convert_alpha()
+            'ground':          ground,
+            'objects':         objects,
+            'player_pos':      player_pos,
+            'spawn_positions': spawn_positions,
         }
 
-    def generate_clusters(self, width, height, fill_prob=0.45, steps=4):
-        """Genererar kluster för skog och stenar"""
-        grid = [[1 if random.random() < fill_prob else 0 for _ in range(width)] for _ in range(height)]
+    # ─────────────────────────────────────────
+    def _place_pattern(self, ground, blocked, pattern, start_col, start_row):
+        """Малює патерн тайлів поверх фону"""
+        for dr, row_ids in enumerate(pattern):
+            for dc, tile_id in enumerate(row_ids):
+                col = start_col + dc
+                row = start_row + dr
+                if 0 <= col < self.width and 0 <= row < self.height:
+                    x = col * TILE_SIZE
+                    y = row * TILE_SIZE
+                    surf = self.get_tile(tile_id)
+                    # Замінюємо існуючий тайл (перебираємо список і міняємо)
+                    # Простіший спосіб — просто додаємо зверху (останній bulit перекриє)
+                    ground.append((x, y, surf))
+                    blocked.add((col, row))
 
-        for _ in range(steps):
-            new_grid = [row[:] for row in grid]
-            for y in range(height):
-                for x in range(width):
-                    # Räkna grannar för att bygga kluster
-                    walls = 0
-                    for dy in [-1, 0, 1]:
-                        for dx in [-1, 0, 1]:
-                            if dx == 0 and dy == 0: continue
-                            nx, ny = x + dx, y + dy
-                            if nx < 0 or ny < 0 or nx >= width or ny >= height or grid[ny][nx] == 1:
-                                walls += 1
-                    
-                    # Jämna ut
-                    if walls > 4: new_grid[y][x] = 1
-                    elif walls < 4: new_grid[y][x] = 0
-            grid = new_grid
-        return grid
-
-    def generate_map(self, width_tiles, height_tiles):
-        """Skapar hela kartan med gräs och objekt"""
-        map_data = {
-            'ground': [],
-            'objects': [],
-            'spawn_pos': (width_tiles // 2 * self.tile_size, height_tiles // 2 * self.tile_size)
-        }
-
-        # Generera kluster (var träden och stenarna ska vara)
-        forest_grid = self.generate_clusters(width_tiles, height_tiles, fill_prob=0.45)
-        rock_grid = self.generate_clusters(width_tiles, height_tiles, fill_prob=0.35)
-
-        for y in range(height_tiles):
-            for x in range(width_tiles):
-                pos = (x * self.tile_size, y * self.tile_size)
-                
-                # 1. Fyll hela världen med gräs
-                map_data['ground'].append({'pos': pos, 'image': self.terrain_tiles['grass']})
-
-                # 2. Skapa en säker zon i mitten så spelaren inte fastnar i ett träd
-                is_spawn_area = (abs(x - width_tiles//2) < 3 and abs(y - height_tiles//2) < 3)
-                
-                if not is_spawn_area:
-                    # Placera träd
-                    if forest_grid[y][x] == 1:
-                        img = self.object_images['tree'] if random.random() > 0.3 else self.object_images['tree_small']
-                        map_data['objects'].append({'pos': pos, 'image': img, 'type': 'tree'})
-                    # Placera stenar (om det inte redan är en skog där)
-                    elif rock_grid[y][x] == 1:
-                        img = self.object_images['rock1'] if random.random() > 0.5 else self.object_images['ruin']
-                        map_data['objects'].append({'pos': pos, 'image': img, 'type': 'rock'})
-
-        return map_data
+    def _is_land_tile(self, col, row, blocked):
+        return (col, row) in blocked

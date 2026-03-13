@@ -7,7 +7,7 @@ from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
-from code.map_generator_temp import MapGenerator
+from mapgen_temp import MapGenerator
 
 class Game:
     def __init__(self):
@@ -77,7 +77,7 @@ class Game:
             
             if current_time - self.shoot_time >= max(current_cooldown, 50):
                 self.can_shoot = True
-        
+    
     def setup(self):
             self.spawn_pos = []
             map_gen = MapGenerator()
@@ -95,7 +95,7 @@ class Game:
             # Sätt spelarens position
             start_x, start_y = map_data['spawn_pos']
             self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
-            # ... din resterande setup-kod för Gun och XPBar ...
+        # ... din resterande setup-kod för Gun och XPBar ...
                 
             # 3. Spelarens startposition (t.ex. mitten av kartan)
             start_x, start_y = map_data['spawn_pos']
