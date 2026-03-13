@@ -7,7 +7,7 @@ from pytmx.util_pygame import load_pygame
 from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
-from code.mapgen import MapGenerator
+from mapgen_temp import MapGenerator
 
 class Game:
     def __init__(self):

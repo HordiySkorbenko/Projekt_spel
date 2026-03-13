@@ -1,13 +1,11 @@
 import pygame
+import math
 from settings import *
-from ui import Clock, DisplayLeaderboard,Leaderboard
-
-
+from ui import Clock, DisplayLeaderboard, Leaderboard
 
 class Menu:
     def __init__(self, screen):
         self.screen = screen
-        # Fallback to SysFont if the specific .ttf path isn't found
         try:
             self.font_big = pygame.font.Font("data/fonts/static/PixelifySans-Regular.ttf", 50)
             self.font_small = pygame.font.Font("data/fonts/static/PixelifySans-Regular.ttf", 35)
@@ -17,179 +15,122 @@ class Menu:
         
         self.difficulty = 1
         self.clock_display = Clock()
-        
         self.logo = pygame.image.load("image/logo/logo1.png").convert_alpha()
         self.logo_rect = self.logo.get_rect()
-        self.logo_rect.centerx = WINDOW_WIDTH // 2
-        self.logo_rect.y = 40
-        self.logo_y = 40
-        self.logo_dir = 1
         self.leaderboard_view = DisplayLeaderboard(self.screen)
         self.leaderboard_manager = Leaderboard()
         
     def main_menu(self):
         running = True
         click = False
-        
         while running:
+            current_time = pygame.time.get_ticks()
             for y in range(WINDOW_HEIGHT):
                 color = (20 + y//20, 10, 30 + y//25)
                 pygame.draw.line(self.screen, color, (0,y), (WINDOW_WIDTH,y))
+            
+            self.logo_rect.centerx = WINDOW_WIDTH // 2
+            self.logo_rect.y = 50 + math.sin(current_time / 600) * 15
             self.screen.blit(self.logo, self.logo_rect)
-            mouse_x, mouse_y = pygame.mouse.get_pos()
             
-            
-                    
-            button_1 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2, 400, 100)
-            button_2 = pygame.Rect(WINDOW_WIDTH/2 - 940, WINDOW_HEIGHT/2 - 200, 400, 100)
-            button_3 = pygame.Rect(WINDOW_WIDTH/2 - 940, (WINDOW_HEIGHT/2)+ 200, 400, 100)
+            mouse_pos = pygame.mouse.get_pos()
+            btn_w, btn_h = 400, 90
+            b1 = pygame.Rect(WINDOW_WIDTH/2 - btn_w/2, WINDOW_HEIGHT/2 - 50, btn_w, btn_h)
+            b2 = pygame.Rect(WINDOW_WIDTH/2 - btn_w/2, WINDOW_HEIGHT/2 - 160, btn_w, btn_h)
+            b3 = pygame.Rect(WINDOW_WIDTH/2 - btn_w/2, WINDOW_HEIGHT/2 + 60, btn_w, btn_h)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
-                
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
-                        # FIX: Reset and return the clock when Enter is pressed
-                        self.clock_display.reset()
-                        return self.clock_display   
-                    elif event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        exit()
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        click = True
-            
-            # Button Click Logic
-            if button_1.collidepoint((mouse_x, mouse_y)) and click:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    click = True
+
+            if b1.collidepoint(mouse_pos) and click:
                 self.clock_display.reset()
                 return self.clock_display
-
-            if button_2.collidepoint((mouse_x, mouse_y)) and click:
+            if b2.collidepoint(mouse_pos) and click:
                 self.difficulty_select()
-            
-            if button_3.collidepoint((mouse_x, mouse_y)) and click:
+            if b3.collidepoint(mouse_pos) and click:
                 self.show_leaderboard()
-            
-                    
-              
-           
 
-            # ritar ut knapparna
-            self.draw_button(button_1, "Start", self.font_big)
-            self.draw_button(button_2, "Difficulty", self.font_small)
-            self.draw_button(button_3, "Highscores", self.font_big)
+            self.draw_button(b1, "Start", self.font_big)
+            self.draw_button(b2, "Difficulty", self.font_small)
+            self.draw_button(b3, "Highscores", self.font_big)
 
-          
-            # Draw text
-            start_text = self.font_big.render("Start", True, (0, 0, 0))
-            selection_text = self.font_small.render("Difficulty", True, (0, 0, 0))
-            highscores_text = self.font_big.render("Highscores", True, (0, 0, 0))
-            self.screen.blit(start_text, start_text.get_rect(center=button_1.center))
-            self.screen.blit(selection_text, selection_text.get_rect(center=button_2.center))
-            self.screen.blit(highscores_text, highscores_text.get_rect(center=button_3.center))
-
-
-        
             pygame.display.update()
             click = False
-    
+
     def draw_button(self, rect, text, font):
-        mouse_pos = pygame.mouse.get_pos()
+        is_h = rect.collidepoint(pygame.mouse.get_pos())
+        col = (200, 250, 200) if is_h else (250, 250, 250)
+        d_rect = rect.inflate(10, 10) if is_h else rect
+        pygame.draw.rect(self.screen, (10,10,10), d_rect.move(4,4), border_radius=12)
+        pygame.draw.rect(self.screen, col, d_rect, border_radius=12)
+        pygame.draw.rect(self.screen, (0,0,0), d_rect, 4, border_radius=12)
+        txt = font.render(text, True, (40,40,40))
+        self.screen.blit(txt, txt.get_rect(center=d_rect.center))
 
-        if rect.collidepoint(mouse_pos):
-            color = (200, 250, 200)   
-            border = (250, 0, 0)
-        else:
-            color = (250, 250, 250)
-            border = (80, 80, 80)
-
-        pygame.draw.rect(self.screen, color, rect)
-        pygame.draw.rect(self.screen, (0,0,0), rect, 6)
-        pygame.draw.rect(self.screen, border, rect.inflate(-6,-6), 3)
-        
-
-        text_surface = font.render(text, True, (40, 40, 40))
-        self.screen.blit(text_surface, text_surface.get_rect(center=rect.center))       
-         
     def difficulty_select(self):
         running = True
-        
         click = False
-
         while running:
-            # bakgrund     
-            self.screen.fill((0, 255, 0))
-            mouse_x, mouse_y = pygame.mouse.get_pos()
+            current_time = pygame.time.get_ticks()
+            self.screen.fill((20, 10, 30))
+            
+            offset = math.sin(current_time / 500) * 15
+            title = self.font_big.render("SELECT DIFFICULTY", True, (255,255,255))
+            self.screen.blit(title, title.get_rect(center=(WINDOW_WIDTH//2, 100+offset)))
 
-            # skapar knapparna
-            level_button_1 = pygame.Rect(200, 150, 200, 50)
-            level_button_2 = pygame.Rect(200, 250, 200, 50)
-            level_button_3 = pygame.Rect(200, 350, 200, 50)
-            
+            mouse_pos = pygame.mouse.get_pos()
+            levels = [
+                (pygame.Rect(WINDOW_WIDTH//2-200, 250, 400, 80), "Too Easy", (150,255,150), 1),
+                (pygame.Rect(WINDOW_WIDTH//2-200, 360, 400, 80), "Average", (255,255,150), 2),
+                (pygame.Rect(WINDOW_WIDTH//2-200, 470, 400, 80), "Impossible", (255,100,100), 3)
+            ]
 
-           # returnar om man antingen valde level 1 2 eler 3
-            if level_button_1.collidepoint((mouse_x, mouse_y)) and click:
-                self.difficulty = 1
-                return self.difficulty
-            if level_button_2.collidepoint((mouse_x, mouse_y)) and click:  
-                self.difficulty = 2
-                return self.difficulty
-            if level_button_3.collidepoint((mouse_x, mouse_y)) and click:
-                self.difficulty = 3
-                return self.difficulty
-            
-            pygame.draw.rect(self.screen, (250, 250, 250), level_button_1) 
-            pygame.draw.rect(self.screen, (250, 250, 250), level_button_2)
-            pygame.draw.rect(self.screen, (250, 250, 250), level_button_3)
-            
-            # ritar texten för varje knapp
-            diff1_text = self.font_big.render("Too Easy", True, (170, 150, 210))
-            diff2_text = self.font_big.render("Average", True, (170, 150, 210))
-            diff3_text = self.font_big.render("Imposible", True, (170, 150, 210))
-            self.screen.blit(diff1_text, diff1_text.get_rect(center=level_button_1.center))
-            self.screen.blit(diff2_text, diff2_text.get_rect(center=level_button_2.center))
-            self.screen.blit(diff3_text, diff3_text.get_rect(center=level_button_3.center))
-            
-            
-
-
-           
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        click = True
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            for r, txt, col, val in levels:
+                is_h = r.collidepoint(mouse_pos)
+                self.draw_fancy_button(r.inflate(15,10) if is_h else r, txt, col, is_h)
+                if is_h and click:
+                    self.difficulty = val
                     running = False
 
-            pygame.display.update()
-    def show_leaderboard(self):
-            running = True
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    click = True
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False
             
-            # Hämta de 10 bästa poängen (eller hur många du vill visa)
-            top_scores = self.leaderboard_manager.get_top_scores(10)
+            pygame.display.update()
+            click = False
 
-            while running:
-                # 1. Måla en bakgrundsfärg (t.ex. mörkgrå/svart)
-                self.screen.fill((20, 20, 30))
-                
-                # 2. Rita ut själva leaderboarden
-                self.leaderboard_view.draw(top_scores)
-                
-                # 3. Hantera inputs (Lyssna efter ESC)
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                        # Gå tillbaka till main_menu genom att bryta loopen
-                        running = False 
+    def draw_fancy_button(self, rect, text, hover_color, is_hovered):
+        color = hover_color if is_hovered else (240, 240, 240)
+        pygame.draw.rect(self.screen, (10, 10, 20), rect.move(6, 6), border_radius=12)
+        pygame.draw.rect(self.screen, color, rect, border_radius=12)
+        pygame.draw.rect(self.screen, (255, 255, 255) if is_hovered else (0, 0, 0), rect, 4, border_radius=12)
+        text_surf = self.font_small.render(text, True, (30, 30, 30))
+        self.screen.blit(text_surf, text_surf.get_rect(center=rect.center))
 
-                pygame.display.update()
-
-
-    
+    def show_leaderboard(self):
+        running = True
+        scores = self.leaderboard_manager.get_top_scores(50)
+        while running:
+            self.screen.fill((20, 20, 30))
+            self.leaderboard_view.draw(scores)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 4:
+                        self.leaderboard_view.scroll_y = min(0, self.leaderboard_view.scroll_y + 40)
+                    if event.button == 5:
+                        self.leaderboard_view.scroll_y -= 40
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False 
+            pygame.display.update()
