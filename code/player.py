@@ -55,7 +55,12 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = self.hitbox_rect.center
 
     def collision(self, direction):
+        # Kolla bara collision-sprites som är nära spelaren — inte hela kartan
         for sprite in self.collision_sprites:
+            if abs(sprite.rect.centerx - self.hitbox_rect.centerx) > 128:
+                continue
+            if abs(sprite.rect.centery - self.hitbox_rect.centery) > 128:
+                continue
             if sprite.rect.colliderect(self.hitbox_rect):
                 if direction == "horizontal":
                     if self.direction.x > 0 : self.hitbox_rect.right = sprite.rect.left

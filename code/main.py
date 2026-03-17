@@ -8,12 +8,19 @@ from random import choice, randint
 from menu import Menu
 from ui import XPBar, Clock, GameOver,Leaderboard
 from mapgen_temp import MapGenerator
+from threading import Thread
 
 class Game:
     def __init__(self):
         # setup
         pygame.init()
-        self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT),pygame.FULLSCREEN)
+        self.display_surface = pygame.display.set_mode(
+            (WINDOW_WIDTH, WINDOW_HEIGHT),
+            pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF,
+            vsync=1
+)        
+        
+        
         pygame.display.set_caption('Survivor')
         self.clock = pygame.time.Clock()
         self.running = True
@@ -79,32 +86,18 @@ class Game:
                 self.can_shoot = True
     
     def setup(self):
-            self.spawn_pos = []
-            map_gen = MapGenerator()
-            map_data = map_gen.generate_map(50, 50) # 50x50 rutor stor karta
-            
-            # 1. Rita marken och lägg till spawn-punkter för fiender (bara gräs)
-            for tile in map_data['ground']:
-                Sprite(tile['pos'], tile['image'], self.all_sprites)
-                if tile['image'] == map_gen.terrain_tiles['grass']:
-                    self.spawn_pos.append(tile['pos'])
-                
-            # 2. Placera ut objekt och kollisioner
-            for obj in map_data['objects']:
-                CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
-                
-            # 3. Sätt spelarens position och UI (Bara EN gång!)
-            start_x, start_y = map_data['spawn_pos']
-            self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
-            self.gun = Gun(self.player, self.all_sprites)
-            self.xp_bar = XPBar(self.player)
-            
-            # 4. Sätt fiendernas spawn points utanför skärmen 
-            # (Eller låt dem spawna på slumpmässiga 'grass'-tiles en bit bort)
-            for tile in map_data['ground']:
-                # Lägg till alla positioner utom vatten som möjliga spawn-pos för fiender
-                if tile['image'] == map_gen.terrain_tiles['grass']:
-                    self.spawn_pos.append(tile['pos'])
+        self.spawn_pos = []  # alltid rensa innan vi bygger om
+        map_gen = MapGenerator()
+        map_data = map_gen.generate_map(50, 50)
+        self.all_sprites.ground_surface = map_data['ground_surface']
+        for obj in map_data['objects']:
+            CollisionSprite(obj['pos'], obj['image'], (self.all_sprites, self.collision_sprites))
+        start_x, start_y = map_data['spawn_pos']
+        self.player = Player((start_x, start_y), self.all_sprites, self.collision_sprites)
+        self.gun = Gun(self.player, self.all_sprites)
+        self.xp_bar = XPBar(self.player)
+        self.spawn_pos = map_data['grass_positions']  
+    
     def bullet_collision(self):
         collision_dict = pygame.sprite.groupcollide(self.bullet_sprites, self.enemy_sprites, True, False)
 
@@ -125,29 +118,20 @@ class Game:
                 
                 self.game_active = False
     def reset_game(self):
-        # 1. Töm alla grupper helt
         self.all_sprites.empty()
         self.collision_sprites.empty()
         self.enemy_sprites.empty()
         self.bullet_sprites.empty()
-        
-        # 2. Återställ viktiga variabler
+        self.spawn_pos = []    
         self.can_shoot = True
         self.shoot_time = 0
-        
-        # 3. Återställ klockan
-        self.clock_display.reset() 
+        self.clock_display.reset()
         self.game_clock = self.clock_display
-
-        # 4. Kör din befintliga setup-metod (Detta bygger kartan och skapar EN spelare)
         self.setup()
-        
-        # 5. Aktivera spelet igen
         self.game_active = True
 
         
-#laddar om all som ska vara på skärmen
-        map = load_pygame(join('data', 'maps', 'world.tmx'))
+
         for obj in map.get_layer_by_name('Entities'):
             if obj.name == 'Player':
                 #self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
@@ -189,7 +173,19 @@ class Game:
                     
                     self.gun_timer()
                     self.input()
-                    self.all_sprites.update(dt)
+                    def update_enemies(dt):
+                        for enemy in self.enemy_sprites:
+                            enemy.update(dt)
+
+                    enemy_thread = Thread(target=update_enemies, args=(dt,), daemon=True)
+                    enemy_thread.start()
+
+                    # Update non-enemy sprites on main thread:
+                    for sprite in self.all_sprites:
+                        if sprite not in self.enemy_sprites:
+                            sprite.update(dt)
+
+                    enemy_thread.join()
                     self.bullet_collision()
                     self.player_collision()
                     

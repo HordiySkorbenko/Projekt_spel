@@ -35,12 +35,18 @@ class Gun(pygame.sprite.Sprite):
         self.player_direction =(mouse_pos-player_pos).normalize()
 
     def rotate_gun(self):
-        angle = degrees(atan2(self.player_direction.x, self.player_direction.y)) - 90
-        if self.player_direction.x > 0:
-            self.image = pygame.transform.rotozoom(self.gun_surf,angle,1)
+        angle = round(degrees(atan2(self.player_direction.x, self.player_direction.y)) - 90, 1)
+        flip  = self.player_direction.x <= 0
+        # Skippa transform om vinkeln inte ändrats sedan förra framen
+        if angle == getattr(self, "_last_angle", None) and flip == getattr(self, "_last_flip", None):
+            return
+        self._last_angle = angle
+        self._last_flip  = flip
+        if not flip:
+            self.image = pygame.transform.rotozoom(self.gun_surf, angle, 1)
         else:
-            self.image = pygame.transform.rotozoom(self.gun_surf,abs(angle),1)
-            self.image = pygame.transform.flip(self.image,False,True)
+            self.image = pygame.transform.rotozoom(self.gun_surf, abs(angle), 1)
+            self.image = pygame.transform.flip(self.image, False, True)
 
 
     #pistolen flyttar med spelaren
@@ -70,19 +76,16 @@ class Bullet(pygame.sprite.Sprite):
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites, difficulty):
+        # Kolla cap INNAN spriten läggs till — annars är den redan i gruppen när vi checkar
+        self.spawn_time = pygame.time.get_ticks()
+        enemy_group = groups[1]
+        if len(enemy_group) >= 25:
+            oldest = min(enemy_group.sprites(), key=lambda e: e.spawn_time)
+            oldest.kill()
+
         super().__init__(*groups)
         self.player = player
         self.difficulty = difficulty
-        
-        # 1. Track exactly when this enemy was spawned
-        self.spawn_time = pygame.time.get_ticks()
-        
-        # 2. Limit the max number of enemies to 25
-        enemy_group = groups[1] # groups[1] is self.enemy_sprites from your Game class
-        if len(enemy_group) > 25:
-            # Find the sprite with the lowest spawn_time (the oldest)
-            oldest_enemy = min(enemy_group.sprites(), key=lambda enemy: enemy.spawn_time)
-            oldest_enemy.kill() # Completely removes it from all groups
 
         # animation
         self.frames, self.frame_index = frames, 0

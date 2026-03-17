@@ -59,35 +59,39 @@ class MapGenerator:
 
     def generate_map(self, width_tiles, height_tiles):
         """Skapar hela kartan med gräs och objekt"""
+        map_width_px  = width_tiles  * self.tile_size
+        map_height_px = height_tiles * self.tile_size
+
+        # Baka alla grästiles till EN enda yta – noll per-frame-kostnad för marken
+        ground_surface = pygame.Surface((map_width_px, map_height_px), pygame.SRCALPHA)
+        grass = self.terrain_tiles['grass']
+        for y in range(height_tiles):
+            for x in range(width_tiles):
+                ground_surface.blit(grass, (x * self.tile_size, y * self.tile_size))
+
         map_data = {
-            'ground': [],
+            'ground_surface': ground_surface,   # en enda yta istället för 2500 dicts
+            'ground': [],                        # behålls tom för bakåtkompatibilitet
             'objects': [],
-            'spawn_pos': (width_tiles // 2 * self.tile_size, height_tiles // 2 * self.tile_size)
+            'spawn_pos': (width_tiles // 2 * self.tile_size, height_tiles // 2 * self.tile_size),
+            'grass_positions': []               # för enemy spawn-pos
         }
 
-        # Generera kluster (var träden och stenarna ska vara)
         forest_grid = self.generate_clusters(width_tiles, height_tiles, fill_prob=0.45)
-        rock_grid = self.generate_clusters(width_tiles, height_tiles, fill_prob=0.35)
+        rock_grid   = self.generate_clusters(width_tiles, height_tiles, fill_prob=0.35)
 
         for y in range(height_tiles):
             for x in range(width_tiles):
                 pos = (x * self.tile_size, y * self.tile_size)
-                
-                # 1. Fyll hela världen med gräs
-                map_data['ground'].append({'pos': pos, 'image': self.terrain_tiles['grass']})
+                map_data['grass_positions'].append(pos)
 
-                # 2. Skapa en säker zon i mitten så spelaren inte fastnar i ett träd
                 is_spawn_area = (abs(x - width_tiles//2) < 3 and abs(y - height_tiles//2) < 3)
-                
                 if not is_spawn_area:
-                    # Placera träd
                     if forest_grid[y][x] == 1:
                         img = self.object_images['tree'] if random.random() > 0.3 else self.object_images['tree_small']
                         map_data['objects'].append({'pos': pos, 'image': img, 'type': 'tree'})
-                    # Placera stenar (om det inte redan är en skog där)
                     elif rock_grid[y][x] == 1:
                         img = self.object_images['rock1'] if random.random() > 0.5 else self.object_images['ruin']
                         map_data['objects'].append({'pos': pos, 'image': img, 'type': 'rock'})
 
         return map_data
-    

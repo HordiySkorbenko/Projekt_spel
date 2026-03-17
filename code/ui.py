@@ -13,15 +13,21 @@ class XPBar:
         self.fill_color = (0, 200, 0)
         self.border_color = (255, 255, 255)
         self.font = pygame.font.SysFont("Arial", 18, bold=True)
+        self._cached_level = None
+        self._cached_level_surf = None
 
     def draw(self, surface):
         pygame.draw.rect(surface, self.bg_color, (self.x, self.y, self.width, self.height))
         xp_ratio = self.player.xp / self.player.xp_to_next_level
-        fill_width = self.width * xp_ratio
+        fill_width = int(self.width * xp_ratio)
         pygame.draw.rect(surface, self.fill_color, (self.x, self.y, fill_width, self.height))
         pygame.draw.rect(surface, self.border_color, (self.x, self.y, self.width, self.height), 2)
-        level_text = self.font.render(f"Level {self.player.level}", True, (255, 255, 255))
-        surface.blit(level_text, (self.x, self.y - 25))
+
+        # Re-render bara när leveln faktiskt ändras, inte varje frame
+        if self._cached_level != self.player.level:
+            self._cached_level = self.player.level
+            self._cached_level_surf = self.font.render(f"Level {self.player.level}", True, (255, 255, 255))
+        surface.blit(self._cached_level_surf, (self.x, self.y - 25))
 
 class Clock:
     def __init__(self):
@@ -31,22 +37,32 @@ class Clock:
         self.text_color = (255, 255, 255)
         self.shadow_color = (0, 0, 0)
         self.start_ticks = pygame.time.get_ticks()
+        self._cached_second = -1
+        self._cached_surf = None
+        self._cached_shadow = None
+        self._cached_rect = None
 
     def reset(self):
         self.start_ticks = pygame.time.get_ticks()
+        self._cached_second = -1
         return self
-            
+
     def draw(self, surface):
         elapsed_milliseconds = pygame.time.get_ticks() - self.start_ticks
         total_seconds = elapsed_milliseconds // 1000
-        minutes = total_seconds // 60
-        seconds = total_seconds % 60
-        time_string = f"{minutes:02}:{seconds:02}"
-        time_text = self.font.render(time_string, True, self.text_color)
-        text_rect = time_text.get_rect(midtop=(self.x, self.y))
-        shadow_text = self.font.render(time_string, True, self.shadow_color)
-        surface.blit(shadow_text, (text_rect.x + 2, text_rect.y + 2))
-        surface.blit(time_text, text_rect)
+
+        # Re-render bara en gång per sekund — inte 60 gånger
+        if self._cached_second != total_seconds:
+            self._cached_second = total_seconds
+            minutes = total_seconds // 60
+            seconds = total_seconds % 60
+            time_string = f"{minutes:02}:{seconds:02}"
+            self._cached_surf   = self.font.render(time_string, True, self.text_color)
+            self._cached_shadow = self.font.render(time_string, True, self.shadow_color)
+            self._cached_rect   = self._cached_surf.get_rect(midtop=(self.x, self.y))
+
+        surface.blit(self._cached_shadow, (self._cached_rect.x + 2, self._cached_rect.y + 2))
+        surface.blit(self._cached_surf,    self._cached_rect)
 
 class GameOver:
     def __init__(self, display_surface):
@@ -54,23 +70,42 @@ class GameOver:
         self.font = pygame.font.SysFont("Arial", 40, bold=True)
         self.small_font = pygame.font.SysFont("Arial", 24)
 
+        # Skapa overlay EN gång — återanvänd varje frame
+        self.overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.overlay.set_alpha(150)
+        self.overlay.fill((0, 0, 0))
+
+        # Cacha statiska texter som aldrig ändras
+        self.title_surf = self.font.render("GAME OVER", True, "white")
+        self.title_rect = self.title_surf.get_rect(center=(WINDOW_WIDTH // 2, 100))
+        self.lb_title   = self.small_font.render("TOP 5 SURVIVORS", True, "yellow")
+        self.lb_rect    = self.lb_title.get_rect(center=(WINDOW_WIDTH // 2, 200))
+        self.hint_surf  = self.small_font.render("Press SPACE to Restart, Press ESC to close", True, "gray")
+        self.hint_rect  = self.hint_surf.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 100))
+
+        # Cacha score-rader — uppdateras bara när top_scores ändras
+        self._cached_scores = None
+        self._cached_score_surfs = []
+
     def draw(self, top_scores):
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
-        overlay.set_alpha(150)
-        overlay.fill((0, 0, 0))
-        self.display_surface.blit(overlay, (0,0))
-        title_surf = self.font.render("GAME OVER", True, "white")
-        title_rect = title_surf.get_rect(center=(WINDOW_WIDTH // 2, 100))
-        self.display_surface.blit(title_surf, title_rect)
-        lb_title = self.small_font.render("TOP 5 SURVIVORS", True, "yellow")
-        self.display_surface.blit(lb_title, lb_title.get_rect(center=(WINDOW_WIDTH // 2, 200)))
-        for i, entry in enumerate(top_scores):
-            score_text = f"{i+1}. XP: {entry['xp']} | Time: {entry['time']}"
-            score_surf = self.small_font.render(score_text, True, "white")
-            y_pos = 250 + (i * 40)
-            self.display_surface.blit(score_surf, score_surf.get_rect(center=(WINDOW_WIDTH // 2, y_pos)))
-        hint_surf = self.small_font.render("Press SPACE to Restart, Press ESC to close ", True, "gray")
-        self.display_surface.blit(hint_surf, hint_surf.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT - 100)))
+        self.display_surface.blit(self.overlay, (0, 0))
+        self.display_surface.blit(self.title_surf, self.title_rect)
+        self.display_surface.blit(self.lb_title,   self.lb_rect)
+
+        # Re-rendera score-rader bara om listan faktiskt ändrats
+        if top_scores != self._cached_scores:
+            self._cached_scores = top_scores
+            self._cached_score_surfs = []
+            for i, entry in enumerate(top_scores):
+                score_text = f"{i+1}. XP: {entry['xp']} | Time: {entry['time']}"
+                surf = self.small_font.render(score_text, True, "white")
+                rect = surf.get_rect(center=(WINDOW_WIDTH // 2, 250 + i * 40))
+                self._cached_score_surfs.append((surf, rect))
+
+        for surf, rect in self._cached_score_surfs:
+            self.display_surface.blit(surf, rect)
+
+        self.display_surface.blit(self.hint_surf, self.hint_rect)
 
 class Leaderboard:
     def __init__(self, filename='leaderboard.json'):
