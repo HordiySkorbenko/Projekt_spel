@@ -122,28 +122,13 @@ class Game:
         self.collision_sprites.empty()
         self.enemy_sprites.empty()
         self.bullet_sprites.empty()
-        self.spawn_pos = []    
+        self.spawn_pos = []
         self.can_shoot = True
         self.shoot_time = 0
         self.clock_display.reset()
         self.game_clock = self.clock_display
+        
         self.setup()
-        self.game_active = True
-
-        
-
-        for obj in map.get_layer_by_name('Entities'):
-            if obj.name == 'Player':
-                #self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
-                self.gun = Gun(self.player, self.all_sprites)
-                self.xp_bar = XPBar(self.player)
-            
-        #ritar allt
-                
-        self.can_shoot = True
-        self.shoot_time = 0
-        
-        self.clock_display = Clock() 
         
         self.game_active = True
                         
